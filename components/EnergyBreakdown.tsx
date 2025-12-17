@@ -22,29 +22,31 @@ export default function EnergyBreakdown({ breakdown }: EnergyBreakdownProps) {
           </dl>
         </div>
         <div>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={350}>
             <BarChart
               data={Object.entries(breakdown).map(([category, kwh]) => ({
                 name: category,
                 value: Math.round(kwh),
               }))}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 20, right: 30, left: 60, bottom: 90 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
                 dataKey="name"
                 angle={-45}
                 textAnchor="end"
-                height={80}
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                height={100}
+                tick={{ fontSize: 13, fill: "#4b5563" }}
+                interval={0}
               />
               <YAxis
-                label={{ value: "kWh/year", angle: -90, position: "insideLeft", style: { fontSize: 12, fill: "#6b7280" } }}
-                tick={{ fontSize: 12, fill: "#6b7280" }}
+                label={{ value: "kWh/year", angle: -90, position: "insideLeft", style: { fontSize: 13, fill: "#4b5563" } }}
+                tick={{ fontSize: 13, fill: "#4b5563" }}
+                width={80}
               />
               <Tooltip
                 formatter={(value: number) => `${value.toLocaleString()} kWh/year`}
-                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "8px" }}
+                contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "8px 12px" }}
               />
               <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
             </BarChart>
