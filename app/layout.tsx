@@ -13,14 +13,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-gray-50">
         <div className="min-h-screen flex flex-col">
-          <header className="border-b">
-            <div className="container mx-auto px-4 py-4">
-              <h1 className="text-xl font-semibold">Energy Audit Tool</h1>
+          <header className="bg-white border-b border-gray-200 shadow-sm">
+            <div className="container mx-auto px-6 py-5">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Energy Audit Tool</h1>
             </div>
           </header>
-          <main className="flex-1 container mx-auto px-4 py-8">
+          <main className="flex-1 container mx-auto px-6 py-10">
             {children}
           </main>
         </div>

@@ -54,11 +54,13 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4">Energy Audit – Baseline Assessment</h1>
-      <p className="text-gray-700 mb-8">
-        This tool estimates building energy usage to help you understand your energy consumption patterns and identify potential areas for improvement.
-      </p>
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-10">
+        <h1 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">Energy Audit – Baseline Assessment</h1>
+        <p className="text-gray-600 text-lg leading-relaxed">
+          This tool estimates building energy usage to help you understand your energy consumption patterns and identify potential areas for improvement.
+        </p>
+      </div>
 
       <BuildingIntakeForm
         formData={formData}
