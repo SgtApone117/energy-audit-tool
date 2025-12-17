@@ -6,7 +6,7 @@ interface ECMTableProps {
 
 export default function ECMTable({ results }: ECMTableProps) {
   return (
-    <div className="mb-8 p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 mb-6">Savings Opportunities</h3>
       <div className="overflow-x-auto -mx-8">
         <div className="inline-block min-w-full align-middle px-8">
@@ -37,16 +37,16 @@ export default function ECMTable({ results }: ECMTableProps) {
               {results.map((ecm, index) => (
                 <tr key={index} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{ecm.name}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium">
+                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium tabular-nums">
                     {Math.round(ecm.energySaved).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium">
+                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium tabular-nums">
                     ${ecm.costSaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium">
+                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium tabular-nums">
                     ${Math.round(ecm.implementationCost).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium">
+                  <td className="px-6 py-4 text-sm text-right text-gray-900 font-medium tabular-nums">
                     {ecm.paybackPeriod === Infinity
                       ? "—"
                       : ecm.paybackPeriod.toFixed(1)}

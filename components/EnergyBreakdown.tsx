@@ -8,15 +8,15 @@ interface EnergyBreakdownProps {
 
 export default function EnergyBreakdown({ breakdown }: EnergyBreakdownProps) {
   return (
-    <div className="mb-8 p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
       <h3 className="text-lg font-semibold text-gray-900 mb-6">Energy Breakdown</h3>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <dl className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="flex flex-col justify-center">
+          <dl className="space-y-0">
             {Object.entries(breakdown).map(([category, kwh]) => (
-              <div key={category} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+              <div key={category} className="flex justify-between items-center py-3.5 border-b border-gray-100 last:border-0">
                 <dt className="text-sm font-medium text-gray-700">{category}</dt>
-                <dd className="text-sm font-semibold text-gray-900">{Math.round(kwh).toLocaleString()} kWh/year</dd>
+                <dd className="text-sm font-semibold text-gray-900 tabular-nums">{Math.round(kwh).toLocaleString()} kWh/year</dd>
               </div>
             ))}
           </dl>

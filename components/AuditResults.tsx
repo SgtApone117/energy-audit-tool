@@ -22,26 +22,28 @@ export default function AuditResults({
   ecmResults,
 }: AuditResultsProps) {
   return (
-    <div className="space-y-8">
-      <div className="border-t-2 border-gray-200 pt-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 tracking-tight">Audit Results</h2>
+    <div className="mt-12">
+      <div className="border-t-2 border-gray-300 pt-10 mb-10">
+        <h2 className="text-2xl font-bold text-gray-900 mb-10 tracking-tight">Audit Results</h2>
 
-        <BuildingSummary data={submittedData} />
+        <div className="space-y-10">
+          <BuildingSummary data={submittedData} />
 
-        {annualEnergyUse !== null && (
-          <EnergyBaseline
-            annualEnergyUse={annualEnergyUse}
-            annualEnergyCost={annualEnergyCost}
-          />
-        )}
+          {annualEnergyUse !== null && (
+            <EnergyBaseline
+              annualEnergyUse={annualEnergyUse}
+              annualEnergyCost={annualEnergyCost}
+            />
+          )}
 
-        {endUseBreakdown && (
-          <EnergyBreakdown breakdown={endUseBreakdown} />
-        )}
+          {endUseBreakdown && (
+            <EnergyBreakdown breakdown={endUseBreakdown} />
+          )}
 
-        {ecmResults && ecmResults.length > 0 && (
-          <ECMTable results={ecmResults} />
-        )}
+          {ecmResults && ecmResults.length > 0 && (
+            <ECMTable results={ecmResults} />
+          )}
+        </div>
       </div>
     </div>
   );
