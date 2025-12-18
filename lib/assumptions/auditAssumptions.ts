@@ -63,3 +63,4 @@ export function getAuditAssumptions(electricityRate: number = DEFAULT_ELECTRICIT
     },
   ];
 }
+

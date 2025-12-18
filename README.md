@@ -112,31 +112,39 @@ Each ECM includes:
 
 ---
 
-## Phase 2 – Interactive Decision Support
+## Phase 2 – Scenario Exploration & Decision Support
 
-### Scenario Simulation
+### Actual Usage Comparison
+- Upload or enter 12 months of energy usage
+- Monthly usage chart:
+  - Actual vs modeled baseline
+- Highlight variance without recalibration
+
+### Scenario Versioning
+- Immutable baseline audit
+- Create multiple scenarios (A / B / C)
+- Reset to baseline at any time
+
+### Scenario Simulation (Core)
 - Toggle ECMs on/off
 - Dynamic recalculation of:
-  - Total savings
-  - Remaining energy use
-  - Overall payback
+  - Total energy savings
+  - Total cost savings
+  - Implementation cost
+  - Simple payback
+- Results clearly labeled as indicative
 
-### Editable Assumptions
-- User-adjustable inputs:
-  - Electricity rates
-  - Savings percentages
-  - Implementation costs
+### Before / After Comparison
+- Side-by-side comparison:
+  - Baseline vs selected scenario
+- Visual and numeric deltas
 
-### Prioritization Engine
-- Rank ECMs by:
-  - Payback
-  - ROI
-  - Energy impact
-  - (Optional) emissions impact
-
-### Before / After Comparisons
-- Baseline vs optimized scenarios
-- Visual comparison views
+### AI Scenario Interpretation
+- Explain:
+  - Why savings and payback change
+  - Trade-offs between measures
+  - Short-term vs long-term impacts
+- Interpretation only (no optimization or recommendations)
 
 ---
 
