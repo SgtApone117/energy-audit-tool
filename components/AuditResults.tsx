@@ -3,10 +3,20 @@
 import { useRef } from "react";
 import type { FormData, ECMResult } from "@/lib/types";
 import { generatePDF } from "@/lib/pdfExport";
+import { generateAuditInsights } from "@/lib/insights/auditInsights";
+import { prepareAIInput } from "@/lib/ai/prepareInput";
+import type { AIExecutiveSummaryOutput } from "@/lib/ai/types";
+import { getAuditAssumptions } from "@/lib/assumptions/auditAssumptions";
+import { DEFAULT_ELECTRICITY_RATE } from "@/lib/data";
 import BuildingSummary from "./BuildingSummary";
 import EnergyBaseline from "./EnergyBaseline";
 import EnergyBreakdown from "./EnergyBreakdown";
 import ECMTable from "./ECMTable";
+import KeyInsightsSection from "./KeyInsightsSection";
+import AIExecutiveSummarySection from "./AIExecutiveSummarySection";
+import TotalSavingsSummaryCard from "./TotalSavingsSummaryCard";
+import EUIBenchmarkContext from "./EUIBenchmarkContext";
+import AssumptionsPanel from "./AssumptionsPanel";
 
 interface AuditResultsProps {
   submittedData: FormData;
@@ -24,6 +34,47 @@ export default function AuditResults({
   ecmResults,
 }: AuditResultsProps) {
   const pdfRef = useRef<HTMLDivElement>(null);
+
+  // Generate insights from existing audit data (read-only, no new calculations)
+  const insights = generateAuditInsights({
+    annualEnergyUse,
+    annualEnergyCost,
+    endUseBreakdown,
+    ecmResults,
+  });
+
+  // Prepare AI input data (read-only formatting, no calculations)
+  const aiInput = prepareAIInput(
+    submittedData,
+    annualEnergyUse,
+    annualEnergyCost,
+    endUseBreakdown,
+    ecmResults,
+    insights
+  );
+
+  // Handler for generating AI executive summary
+  const handleGenerateAISummary = async (): Promise<AIExecutiveSummaryOutput> => {
+    if (!aiInput) {
+      throw new Error("Insufficient audit data to generate summary");
+    }
+
+    const response = await fetch("/api/executive-summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(aiInput),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(error.error || "Failed to generate executive summary");
+    }
+
+    const data = await response.json();
+    return data.summary;
+  };
 
   const handleDownloadPDF = async () => {
     if (!pdfRef.current) return;
@@ -64,6 +115,84 @@ export default function AuditResults({
         }
         if (htmlEl.style.visibility === "hidden") {
           htmlEl.style.visibility = "visible";
+        }
+      }
+    });
+
+    // Expand AssumptionsPanel for PDF
+    // First, try to find existing assumptions content and make it visible
+    let assumptionsContent = contentClone.querySelector("#assumptions-content") as HTMLElement;
+    
+    // If assumptions content doesn't exist (panel was collapsed), create it
+    if (!assumptionsContent) {
+      const assumptionsPanel = contentClone.querySelector('[aria-controls="assumptions-content"]')?.closest('div[class*="bg-gray-50"]') as HTMLElement;
+      if (assumptionsPanel) {
+        const assumptions = getAuditAssumptions(DEFAULT_ELECTRICITY_RATE);
+        
+        // Create the assumptions content div
+        const contentDiv = document.createElement("div");
+        contentDiv.id = "assumptions-content";
+        contentDiv.className = "mt-6 space-y-6";
+        contentDiv.style.display = "block";
+        
+        assumptions.forEach((category) => {
+          const categoryDiv = document.createElement("div");
+          const title = document.createElement("h4");
+          title.className = "text-base font-semibold text-gray-900 mb-3";
+          title.textContent = category.title;
+          categoryDiv.appendChild(title);
+          
+          const ul = document.createElement("ul");
+          ul.className = "space-y-2";
+          category.items.forEach((item) => {
+            const li = document.createElement("li");
+            li.className = "flex items-start";
+            const bullet = document.createElement("span");
+            bullet.className = "text-gray-400 mr-2 mt-1.5";
+            bullet.textContent = "•";
+            const text = document.createElement("span");
+            text.className = "text-sm text-gray-700 leading-relaxed flex-1";
+            text.textContent = item;
+            li.appendChild(bullet);
+            li.appendChild(text);
+            ul.appendChild(li);
+          });
+          categoryDiv.appendChild(ul);
+          contentDiv.appendChild(categoryDiv);
+        });
+        
+        assumptionsPanel.appendChild(contentDiv);
+        assumptionsContent = contentDiv;
+      }
+    } else {
+      // Content exists, just make sure it's visible
+      assumptionsContent.style.display = "block";
+    }
+    
+    // Update button visual state to show expanded
+    const assumptionsButton = contentClone.querySelector('[aria-controls="assumptions-content"]');
+    if (assumptionsButton) {
+      const buttonEl = assumptionsButton as HTMLElement;
+      buttonEl.setAttribute("aria-expanded", "true");
+      const svg = buttonEl.querySelector("svg");
+      if (svg) {
+        svg.style.transform = "rotate(180deg)";
+      }
+    }
+
+    // Ensure AI Executive Summary content is visible if it exists
+    // Look for sections with "Overview" heading which indicates AI summary is generated
+    const allH4s = contentClone.querySelectorAll("h4");
+    allH4s.forEach((h4) => {
+      if (h4.textContent?.trim() === "Overview") {
+        // Found AI summary, ensure parent container is visible
+        let parent = h4.parentElement;
+        while (parent && parent !== contentClone) {
+          const parentEl = parent as HTMLElement;
+          if (parentEl.style) {
+            parentEl.style.display = "block";
+          }
+          parent = parent.parentElement;
         }
       }
     });
@@ -111,6 +240,27 @@ export default function AuditResults({
         </div>
 
         <div ref={pdfRef} className="space-y-10">
+          {aiInput && (
+            <AIExecutiveSummarySection onGenerate={handleGenerateAISummary} />
+          )}
+
+          {insights.length > 0 && <KeyInsightsSection insights={insights} />}
+
+          {ecmResults && ecmResults.length > 0 && (
+            <TotalSavingsSummaryCard ecmResults={ecmResults} />
+          )}
+
+          {annualEnergyUse !== null &&
+            submittedData.floorArea &&
+            parseFloat(submittedData.floorArea) > 0 &&
+            submittedData.businessType && (
+              <EUIBenchmarkContext
+                annualEnergyUse={annualEnergyUse}
+                floorArea={parseFloat(submittedData.floorArea)}
+                businessType={submittedData.businessType}
+              />
+            )}
+
           <BuildingSummary data={submittedData} />
 
           {annualEnergyUse !== null && (
@@ -127,9 +277,10 @@ export default function AuditResults({
           {ecmResults && ecmResults.length > 0 && (
             <ECMTable results={ecmResults} />
           )}
+
+          <AssumptionsPanel />
         </div>
       </div>
     </div>
   );
 }
-

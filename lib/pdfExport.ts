@@ -53,11 +53,33 @@ export async function generatePDF(element: HTMLElement, buildingName: string = "
     heightLeft -= pageHeight;
 
     // Add additional pages if content is longer than one page
+    const totalPages = Math.ceil(imgHeight / pageHeight);
     while (heightLeft >= 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
+    }
+
+    // Add report metadata to footer on all pages
+    const reportDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const toolName = "Energy Audit Tool";
+
+    // Add footer to all pages
+    for (let i = 1; i <= pdf.getNumberOfPages(); i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text(
+        `Generated on ${reportDate} | ${toolName}`,
+        pdf.internal.pageSize.getWidth() / 2,
+        pdf.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
     }
 
     // Generate filename with building name and date
