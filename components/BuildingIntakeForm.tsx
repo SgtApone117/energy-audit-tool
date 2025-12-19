@@ -320,7 +320,17 @@ export default function BuildingIntakeForm({
               <option value="Fuel Oil">Fuel Oil</option>
               <option value="Propane">Propane</option>
             </select>
-            <p className="mt-1 text-xs text-gray-500">Main source for heating/cooling</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Main source for heating/cooling.
+              <a
+                href="https://www.heatpumpbillimpact.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline ml-1"
+              >
+                Compare heat pump costs →
+              </a>
+            </p>
           </div>
 
           {/* Secondary Fuel */}
