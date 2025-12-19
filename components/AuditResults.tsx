@@ -2,11 +2,18 @@
 
 import { useRef, useState } from "react";
 import type { FormData, ECMResult } from "@/lib/types";
+import { UtilityBillData } from "@/lib/utility/types";
+import { OperatingScheduleData } from "@/lib/schedule/types";
+import { EquipmentInventory } from "@/lib/equipment/types";
 import { generatePDF } from "@/lib/pdfExport";
 import { generateAuditInsights } from "@/lib/insights/auditInsights";
 import { prepareAIInput } from "@/lib/ai/prepareInput";
 import type { AIExecutiveSummaryOutput } from "@/lib/ai/types";
 import { getReportContent } from "@/lib/reportGenerator";
+import { calculateAnnualEnergyUse } from "@/lib/calculations";
+import { compareActualToEstimated } from "@/lib/utility/utilityAnalysis";
+import { getScheduleSummary } from "@/lib/schedule/scheduleCalculations";
+import { getEquipmentSummary, getEquipmentECMRecommendations } from "@/lib/equipment/equipmentCalculations";
 import BuildingSummary from "./BuildingSummary";
 import EnergyBaseline from "./EnergyBaseline";
 import EnergyBreakdown from "./EnergyBreakdown";
@@ -16,6 +23,7 @@ import AIExecutiveSummarySection from "./AIExecutiveSummarySection";
 import TotalSavingsSummaryCard from "./TotalSavingsSummaryCard";
 import EUIBenchmarkContext from "./EUIBenchmarkContext";
 import AssumptionsPanel from "./AssumptionsPanel";
+import ActualVsEstimatedComparison from "./ActualVsEstimatedComparison";
 
 interface AuditResultsProps {
   submittedData: FormData;
@@ -23,6 +31,9 @@ interface AuditResultsProps {
   annualEnergyCost: number | null;
   endUseBreakdown: Record<string, number> | null;
   ecmResults: ECMResult[] | null;
+  utilityData?: UtilityBillData | null;
+  scheduleData?: OperatingScheduleData | null;
+  equipmentData?: EquipmentInventory | null;
 }
 
 export default function AuditResults({
@@ -31,6 +42,9 @@ export default function AuditResults({
   annualEnergyCost,
   endUseBreakdown,
   ecmResults,
+  utilityData,
+  scheduleData,
+  equipmentData,
 }: AuditResultsProps) {
   const pdfRef = useRef<HTMLDivElement>(null);
   const [aiSummary, setAiSummary] = useState<AIExecutiveSummaryOutput | null>(null);
@@ -52,6 +66,25 @@ export default function AuditResults({
     ecmResults,
     insights
   );
+
+  // Calculate actual vs estimated comparison if utility data exists
+  const utilityComparison = utilityData?.hasActualData
+    ? (() => {
+        const estimatedKwh = calculateAnnualEnergyUse(
+          submittedData.businessType,
+          submittedData.floorArea
+        );
+        if (estimatedKwh === null) return null;
+        const actualKwh = utilityData.totalElectricityKwh;
+        const floorArea = parseFloat(submittedData.floorArea) || 0;
+        return compareActualToEstimated(actualKwh, estimatedKwh, floorArea);
+      })()
+    : null;
+
+  // Get equipment-specific ECM recommendations
+  const equipmentECMs = equipmentData?.hasEquipmentData
+    ? getEquipmentECMRecommendations(equipmentData)
+    : [];
 
   // Handler for generating AI executive summary
   const handleGenerateAISummary = async (): Promise<AIExecutiveSummaryOutput> => {
@@ -146,6 +179,13 @@ export default function AuditResults({
             </div>
           )}
 
+          {/* Phase A: Actual vs Estimated Comparison */}
+          {utilityComparison && (
+            <div className="pdf-section">
+              <ActualVsEstimatedComparison comparison={utilityComparison} />
+            </div>
+          )}
+
           {annualEnergyUse !== null &&
             submittedData.floorArea &&
             parseFloat(submittedData.floorArea) > 0 &&
@@ -162,6 +202,115 @@ export default function AuditResults({
           <div className="pdf-section">
             <BuildingSummary data={submittedData} />
           </div>
+
+          {/* Phase B: Operating Schedule Summary */}
+          {scheduleData?.hasScheduleData && (
+            <div className="pdf-section">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Operating Schedule</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {scheduleData.hoursPerWeek}
+                    </div>
+                    <div className="text-xs text-gray-600">Hours/Week</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {scheduleData.daysPerWeek}
+                    </div>
+                    <div className="text-xs text-gray-600">Days/Week</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {scheduleData.annualOperatingHours.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-gray-600">Annual Hours</div>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {Math.round(scheduleData.averageOccupancyRate * 100)}%
+                    </div>
+                    <div className="text-xs text-gray-600">Avg Occupancy</div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-4">
+                  {getScheduleSummary(scheduleData)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Phase C: Equipment Summary */}
+          {equipmentData?.hasEquipmentData && (
+            <div className="pdf-section">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Equipment Inventory Summary</h3>
+                <p className="text-sm text-gray-600 mb-4">{getEquipmentSummary(equipmentData)}</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {equipmentData.totalHVACCapacity > 0 && (
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-900">
+                        {equipmentData.totalHVACCapacity}
+                      </div>
+                      <div className="text-xs text-blue-700">HVAC Capacity (tons)</div>
+                    </div>
+                  )}
+                  {equipmentData.totalLightingWattage > 0 && (
+                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-900">
+                        {(equipmentData.totalLightingWattage / 1000).toFixed(1)}
+                      </div>
+                      <div className="text-xs text-yellow-700">Lighting Load (kW)</div>
+                    </div>
+                  )}
+                  {equipmentData.totalMajorEquipmentLoad > 0 && (
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-900">
+                        {equipmentData.totalMajorEquipmentLoad.toFixed(1)}
+                      </div>
+                      <div className="text-xs text-purple-700">Equipment Load (kW)</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Equipment-specific ECM recommendations */}
+                {equipmentECMs.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                      Equipment-Specific Recommendations
+                    </h4>
+                    <div className="space-y-2">
+                      {equipmentECMs.slice(0, 5).map((ecm, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded ${
+                                ecm.priority === "High"
+                                  ? "bg-red-100 text-red-800"
+                                  : ecm.priority === "Medium"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}
+                            >
+                              {ecm.priority}
+                            </span>
+                            <span className="text-sm text-gray-700">{ecm.recommendation}</span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            ~{Math.round(ecm.estimatedSavings * 100)}% savings
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {annualEnergyUse !== null && (
             <div className="pdf-section">

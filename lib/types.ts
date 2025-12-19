@@ -38,3 +38,8 @@ export interface ECMResult {
   priority: "High" | "Medium" | "Low";
 }
 
+// Re-export Phase A, B, C types for convenient importing
+export * from "./utility/types";
+export * from "./schedule/types";
+export * from "./equipment/types";
+
