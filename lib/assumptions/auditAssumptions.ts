@@ -21,6 +21,8 @@ export function getAuditAssumptions(electricityRate: number = DEFAULT_ELECTRICIT
       items: [
         "Energy use is estimated using industry-standard Energy Use Intensity (EUI) benchmarks by building type.",
         "Building size and type are the primary normalization factors for energy estimation.",
+        "EUI is adjusted based on building age: +15% for pre-2000 construction, baseline for 2000-2010, -10% for post-2010 (reflecting improved building codes and equipment efficiency).",
+        "EUI is further adjusted based on climate zone derived from ZIP code: +15-20% for extreme climates (hot/cold), +5-10% for moderate climates.",
         "Results represent typical operating conditions and may not reflect actual utility bills.",
         "EUI values are derived from industry-standard reference data for similar building types.",
       ],
@@ -29,8 +31,10 @@ export function getAuditAssumptions(electricityRate: number = DEFAULT_ELECTRICIT
       title: "Utility Rate Assumptions",
       items: [
         `Electricity rate used: $${electricityRate.toFixed(2)} per kWh.`,
+        "Electricity rates are determined by state based on ZIP code input, using EIA state average data.",
+        "If no ZIP code is provided, the US national average rate is used as fallback.",
         "Rates are assumed constant for modeling purposes and do not account for time-of-use pricing, demand charges, or rate escalation.",
-        "Actual utility rates may vary by location, utility provider, and rate schedule.",
+        "Actual utility rates may vary by utility provider, rate schedule, and season.",
       ],
     },
     {

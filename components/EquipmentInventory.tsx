@@ -18,6 +18,7 @@ import {
   LIGHTING_WATTAGE_TYPICAL,
 } from "@/lib/equipment/types";
 import { calculateEquipmentTotals, getEquipmentSummary } from "@/lib/equipment/equipmentCalculations";
+import { InfoTooltip } from "./ui/Tooltip";
 
 interface EquipmentInventoryProps {
   equipment: EquipmentInventoryType;
@@ -160,9 +161,13 @@ export default function EquipmentInventory({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             Equipment Inventory
             <span className="ml-2 text-sm font-normal text-gray-500">(Optional)</span>
+            <InfoTooltip 
+              content="Add details about your HVAC systems, lighting fixtures, and major equipment. This enables equipment-specific Energy Conservation Measure (ECM) recommendations tailored to your actual equipment."
+              position="right"
+            />
           </h3>
           <p className="text-sm text-gray-600 mt-1">
             {equipment.hasEquipmentData
@@ -198,13 +203,22 @@ export default function EquipmentInventory({
           {/* Tabs */}
           <div className="flex gap-1 border-b border-gray-200">
             <button type="button" className={tabClass("hvac")} onClick={() => setActiveTab("hvac")}>
-              HVAC ({equipment.hvacUnits.length})
+              <span className="flex items-center gap-1">
+                HVAC ({equipment.hvacUnits.length})
+                <InfoTooltip content="Heating, Ventilation, and Air Conditioning units. Include rooftop units, split systems, heat pumps, furnaces, etc." position="bottom" />
+              </span>
             </button>
             <button type="button" className={tabClass("lighting")} onClick={() => setActiveTab("lighting")}>
-              Lighting ({equipment.lightingZones.length})
+              <span className="flex items-center gap-1">
+                Lighting ({equipment.lightingZones.length})
+                <InfoTooltip content="Lighting fixtures organized by zone/area. Include fixture type, count, wattage, and operating hours for each area." position="bottom" />
+              </span>
             </button>
             <button type="button" className={tabClass("equipment")} onClick={() => setActiveTab("equipment")}>
-              Other Equipment ({equipment.majorEquipment.length})
+              <span className="flex items-center gap-1">
+                Other ({equipment.majorEquipment.length})
+                <InfoTooltip content="Major energy-consuming equipment: refrigeration, compressors, motors, kitchen equipment, data centers, EV chargers, etc." position="bottom" />
+              </span>
             </button>
             {equipment.hasEquipmentData && (
               <button

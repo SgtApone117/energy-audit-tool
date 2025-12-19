@@ -15,6 +15,7 @@ import {
   calculateScheduleMetrics,
   getScheduleSummary,
 } from "@/lib/schedule/scheduleCalculations";
+import { InfoTooltip } from "./ui/Tooltip";
 
 interface OperatingScheduleInputProps {
   scheduleData: OperatingScheduleData;
@@ -137,9 +138,13 @@ export default function OperatingScheduleInput({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             Operating Schedule
             <span className="ml-2 text-sm font-normal text-gray-500">(Optional)</span>
+            <InfoTooltip 
+              content="Define your building's operating hours and occupancy patterns. This helps refine energy estimates based on when the building is actively used vs. idle. Useful for buildings with non-standard hours."
+              position="right"
+            />
           </h3>
           <p className="text-sm text-gray-600 mt-1">
             {scheduleData.hasScheduleData
@@ -205,8 +210,9 @@ export default function OperatingScheduleInput({
             /* Simple mode */
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   Hours per day
+                  <InfoTooltip content="Average number of hours the building is occupied and operating each day." />
                 </label>
                 <select
                   value={Math.round(scheduleData.hoursPerWeek / Math.max(scheduleData.daysPerWeek, 1))}
@@ -223,8 +229,9 @@ export default function OperatingScheduleInput({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   Days per week
+                  <InfoTooltip content="Number of days per week the building operates. For most offices this is 5; for retail/restaurants often 6-7." />
                 </label>
                 <select
                   value={scheduleData.daysPerWeek}
@@ -241,8 +248,9 @@ export default function OperatingScheduleInput({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   Average occupancy
+                  <InfoTooltip content="Typical occupancy level during operating hours. 100% = fully occupied, 50% = half capacity on average." />
                 </label>
                 <select
                   value={Math.round(scheduleData.averageOccupancyRate * 100)}
@@ -337,8 +345,9 @@ export default function OperatingScheduleInput({
 
           {/* Seasonal variations */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
+            <h4 className="flex items-center text-sm font-medium text-gray-700 mb-3">
               Seasonal HVAC Intensity
+              <InfoTooltip content="Adjust HVAC energy usage by season. Higher values for extreme weather (summer/winter), lower for mild seasons (spring/fall)." />
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {scheduleData.seasonalVariations.map((sv, index) => (

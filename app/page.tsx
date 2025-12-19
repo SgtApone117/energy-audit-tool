@@ -6,11 +6,16 @@ import { UtilityBillData, createEmptyUtilityData } from "@/lib/utility/types";
 import { OperatingScheduleData, createEmptyScheduleData } from "@/lib/schedule/types";
 import { EquipmentInventory, createEmptyEquipmentInventory } from "@/lib/equipment/types";
 import {
-  calculateAnnualEnergyUse,
+  calculateAnnualEnergyUseWithAdjustments,
   calculateAnnualEnergyCost,
-  calculateEndUseBreakdown,
+  calculateEnhancedEndUseBreakdown,
   calculateECMs,
+  EnergyCalculationResult,
+  EnhancedBreakdownResult,
+  getEffectiveElectricityRate,
 } from "@/lib/calculations";
+import { getStateFromZip } from "@/lib/data/zipToState";
+import { calculateEnhancedECMs, ECMCalculationSummary } from "@/lib/ecm";
 import BuildingIntakeForm from "@/components/BuildingIntakeForm";
 import UtilityBillInput from "@/components/UtilityBillInput";
 import OperatingScheduleInput from "@/components/OperatingScheduleInput";
@@ -26,7 +31,11 @@ export default function Home() {
     zipCode: "",
     constructionYear: "",
     primaryHeatingFuel: "",
+    secondaryFuel: "None",
   });
+
+  // Track calculation details for display
+  const [calculationResult, setCalculationResult] = useState<EnergyCalculationResult | null>(null);
 
   // Phase A: Utility bill data
   const [utilityData, setUtilityData] = useState<UtilityBillData>(createEmptyUtilityData());
@@ -49,7 +58,9 @@ export default function Home() {
   const [annualEnergyUse, setAnnualEnergyUse] = useState<number | null>(null);
   const [annualEnergyCost, setAnnualEnergyCost] = useState<number | null>(null);
   const [endUseBreakdown, setEndUseBreakdown] = useState<Record<string, number> | null>(null);
+  const [enhancedBreakdown, setEnhancedBreakdown] = useState<EnhancedBreakdownResult | null>(null);
   const [ecmResults, setEcmResults] = useState<ReturnType<typeof calculateECMs>>(null);
+  const [enhancedEcmResults, setEnhancedEcmResults] = useState<ECMCalculationSummary | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -75,33 +86,77 @@ export default function Home() {
     setSubmittedScheduleData({ ...scheduleData });
     setSubmittedEquipmentData({ ...equipmentData });
 
-    // Calculate energy use - use actual data if available, otherwise use EUI estimate
+    // Get state code from ZIP for utility rates
+    const stateCode = formData.zipCode ? getStateFromZip(formData.zipCode) : null;
+
+    // Calculate energy use with adjustments
     let energyUse: number | null;
+    let calcResult: EnergyCalculationResult | null = null;
+
     if (utilityData.hasActualData && utilityData.totalElectricityKwh > 0) {
       // Use actual utility data
       energyUse = utilityData.totalElectricityKwh;
+      // Still calculate the result for reference data (rates, climate, etc.)
+      calcResult = calculateAnnualEnergyUseWithAdjustments(
+        formData.businessType,
+        formData.floorArea,
+        {
+          constructionYear: formData.constructionYear,
+          zipCode: formData.zipCode,
+        }
+      );
     } else {
-      // Use EUI-based estimate
-      energyUse = calculateAnnualEnergyUse(formData.businessType, formData.floorArea);
+      // Use EUI-based estimate with adjustments
+      calcResult = calculateAnnualEnergyUseWithAdjustments(
+        formData.businessType,
+        formData.floorArea,
+        {
+          constructionYear: formData.constructionYear,
+          zipCode: formData.zipCode,
+        }
+      );
+      energyUse = calcResult?.annualEnergyUse ?? null;
     }
+    
+    setCalculationResult(calcResult);
     setAnnualEnergyUse(energyUse);
 
-    // Calculate energy cost - use actual data if available
+    // Calculate energy cost - use actual data if available, otherwise use state rates
     let energyCost: number | null;
     if (utilityData.hasActualData && utilityData.totalElectricityCost > 0) {
       energyCost = utilityData.totalElectricityCost;
     } else {
-      energyCost = energyUse !== null ? calculateAnnualEnergyCost(energyUse) : null;
+      energyCost = energyUse !== null ? calculateAnnualEnergyCost(energyUse, stateCode) : null;
     }
     setAnnualEnergyCost(energyCost);
 
-    // Calculate end-use breakdown
-    const breakdown = calculateEndUseBreakdown(formData.businessType, energyUse);
-    setEndUseBreakdown(breakdown);
+    // Calculate enhanced end-use breakdown (integrates equipment data if available)
+    const enhanced = calculateEnhancedEndUseBreakdown(
+      formData.businessType,
+      energyUse,
+      equipmentData.hasEquipmentData ? {
+        estimatedAnnualHVACKwh: equipmentData.estimatedAnnualHVACKwh,
+        estimatedAnnualLightingKwh: equipmentData.estimatedAnnualLightingKwh,
+        estimatedAnnualEquipmentKwh: equipmentData.estimatedAnnualEquipmentKwh,
+        hasEquipmentData: equipmentData.hasEquipmentData,
+      } : null
+    );
+    setEnhancedBreakdown(enhanced);
+    setEndUseBreakdown(enhanced?.breakdown ?? null);
 
-    // Calculate ECMs
-    const ecms = calculateECMs(breakdown, formData.floorArea);
+    // Calculate ECMs with state-based electricity rate (legacy)
+    const ecms = calculateECMs(enhanced?.breakdown ?? null, formData.floorArea, stateCode);
     setEcmResults(ecms);
+
+    // Calculate enhanced ECMs with confidence ranges and rebates
+    const electricityRate = getEffectiveElectricityRate(stateCode);
+    const enhancedEcms = calculateEnhancedECMs(
+      formData.businessType,
+      enhanced?.breakdown ?? null,
+      parseFloat(formData.floorArea) || 0,
+      electricityRate
+    );
+    setEnhancedEcmResults(enhancedEcms);
   };
 
   const floorAreaNumber = parseFloat(formData.floorArea) || 0;
@@ -152,10 +207,13 @@ export default function Home() {
           annualEnergyUse={annualEnergyUse}
           annualEnergyCost={annualEnergyCost}
           endUseBreakdown={endUseBreakdown}
+          enhancedBreakdown={enhancedBreakdown}
           ecmResults={ecmResults}
+          enhancedEcmResults={enhancedEcmResults}
           utilityData={submittedUtilityData}
           scheduleData={submittedScheduleData}
           equipmentData={submittedEquipmentData}
+          calculationResult={calculationResult}
         />
       )}
     </div>

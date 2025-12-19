@@ -1,5 +1,6 @@
 import type { BusinessType } from "@/lib/types";
 import { EUI_BENCHMARK_RANGES, getEUIContextLabel } from "@/lib/benchmarks/euiBenchmarks";
+import { InfoTooltip } from "./ui/Tooltip";
 
 interface EUIBenchmarkContextProps {
   annualEnergyUse: number;
@@ -48,7 +49,13 @@ export default function EUIBenchmarkContext({
 
   return (
     <div className="p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">Energy Use Intensity (EUI) Context</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+        Energy Use Intensity (EUI) Context
+        <InfoTooltip 
+          content="EUI measures energy use per square foot (kWh/sf/year). It allows comparison of your building's efficiency against typical buildings of the same type, regardless of size."
+          position="right"
+        />
+      </h3>
       
       <div className="space-y-6">
         {/* EUI Value and Benchmark Range */}
