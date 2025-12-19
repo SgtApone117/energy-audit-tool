@@ -33,7 +33,7 @@ export default function AIExecutiveSummarySection({
   return (
     <div className="p-8 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-slate-200 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">AI Executive Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Smart Audit Summary</h3>
         {!isExpanded && (
           <button
             onClick={handleGenerate}
@@ -79,7 +79,7 @@ export default function AIExecutiveSummarySection({
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                Generate Executive Summary
+                Generate Audit Summary
               </>
             )}
           </button>
@@ -91,7 +91,7 @@ export default function AIExecutiveSummarySection({
           {isLoading && (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
-              <p className="mt-4 text-sm text-gray-600">Generating professional executive summary...</p>
+              <p className="mt-4 text-sm text-gray-600">Generating professional audit summary...</p>
             </div>
           )}
 

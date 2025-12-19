@@ -35,6 +35,12 @@ export default function BuildingSummary({ data }: BuildingSummaryProps) {
           <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Primary Heating Fuel</dt>
           <dd className="text-base font-medium text-gray-900">{data.primaryHeatingFuel || "—"}</dd>
         </div>
+        {data.secondaryFuel && data.secondaryFuel !== "None" && (
+          <div>
+            <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Secondary Fuel</dt>
+            <dd className="text-base font-medium text-gray-900">{data.secondaryFuel}</dd>
+          </div>
+        )}
       </dl>
     </div>
   );

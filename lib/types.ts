@@ -11,7 +11,13 @@ export type BusinessType =
 
 export type ConstructionYear = "Before 2000" | "2000–2010" | "After 2010";
 
-export type PrimaryHeatingFuel = "Electric" | "Natural Gas" | "Fuel Oil" | "Propane";
+export type FuelType = "Electric" | "Natural Gas" | "Fuel Oil" | "Propane";
+
+// Keep PrimaryHeatingFuel as alias for backwards compatibility
+export type PrimaryHeatingFuel = FuelType;
+
+// Secondary fuel is optional and can also be "None"
+export type SecondaryFuel = FuelType | "None";
 
 export interface FormData {
   buildingName: string;
@@ -20,6 +26,7 @@ export interface FormData {
   zipCode: string;
   constructionYear: ConstructionYear | "";
   primaryHeatingFuel: PrimaryHeatingFuel | "";
+  secondaryFuel: SecondaryFuel;
 }
 
 export interface ECMDefinition {
@@ -37,4 +44,9 @@ export interface ECMResult {
   paybackPeriod: number; // years
   priority: "High" | "Medium" | "Low";
 }
+
+// Re-export Phase A, B, C types for convenient importing
+export * from "./utility/types";
+export * from "./schedule/types";
+export * from "./equipment/types";
 
