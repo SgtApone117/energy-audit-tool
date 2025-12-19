@@ -12,3 +12,24 @@
   }
 }
 
+/* PDF-safe list styling for html2canvas compatibility */
+.pdf-safe-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.pdf-safe-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pdf-safe-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: inherit;
+  font-weight: bold;
+}
+

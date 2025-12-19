@@ -52,11 +52,10 @@ export default function AssumptionsPanel({
           {assumptions.map((category, categoryIndex) => (
             <div key={categoryIndex}>
               <h4 className="text-base font-semibold text-gray-900 mb-3">{category.title}</h4>
-              <ul className="space-y-2">
+              <ul className="space-y-2 pdf-safe-list">
                 {category.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="flex items-start">
-                    <span className="text-gray-400 mr-2 mt-1.5">•</span>
-                    <span className="text-sm text-gray-700 leading-relaxed flex-1">{item}</span>
+                  <li key={itemIndex} className="text-sm text-gray-700 leading-relaxed">
+                    {item}
                   </li>
                 ))}
               </ul>
