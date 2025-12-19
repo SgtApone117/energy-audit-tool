@@ -21,7 +21,7 @@ export default function EnergyBreakdown({ breakdown }: EnergyBreakdownProps) {
             ))}
           </dl>
         </div>
-        <div>
+        <div id="energy-breakdown-chart">
           <ResponsiveContainer width="100%" height={350}>
             <BarChart
               data={Object.entries(breakdown).map(([category, kwh]) => ({

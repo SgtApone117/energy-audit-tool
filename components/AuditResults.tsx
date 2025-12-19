@@ -1,12 +1,21 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { FormData, ECMResult } from "@/lib/types";
 import { generatePDF } from "@/lib/pdfExport";
+import { generateAuditInsights } from "@/lib/insights/auditInsights";
+import { prepareAIInput } from "@/lib/ai/prepareInput";
+import type { AIExecutiveSummaryOutput } from "@/lib/ai/types";
+import { getReportContent } from "@/lib/reportGenerator";
 import BuildingSummary from "./BuildingSummary";
 import EnergyBaseline from "./EnergyBaseline";
 import EnergyBreakdown from "./EnergyBreakdown";
 import ECMTable from "./ECMTable";
+import KeyInsightsSection from "./KeyInsightsSection";
+import AIExecutiveSummarySection from "./AIExecutiveSummarySection";
+import TotalSavingsSummaryCard from "./TotalSavingsSummaryCard";
+import EUIBenchmarkContext from "./EUIBenchmarkContext";
+import AssumptionsPanel from "./AssumptionsPanel";
 
 interface AuditResultsProps {
   submittedData: FormData;
@@ -24,63 +33,71 @@ export default function AuditResults({
   ecmResults,
 }: AuditResultsProps) {
   const pdfRef = useRef<HTMLDivElement>(null);
+  const [aiSummary, setAiSummary] = useState<AIExecutiveSummaryOutput | null>(null);
 
-  const handleDownloadPDF = async () => {
-    if (!pdfRef.current) return;
+  // Generate insights from existing audit data (read-only, no new calculations)
+  const insights = generateAuditInsights({
+    annualEnergyUse,
+    annualEnergyCost,
+    endUseBreakdown,
+    ecmResults,
+  });
 
-    // Wait a bit to ensure all content (especially charts) is fully rendered
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  // Prepare AI input data (read-only formatting, no calculations)
+  const aiInput = prepareAIInput(
+    submittedData,
+    annualEnergyUse,
+    annualEnergyCost,
+    endUseBreakdown,
+    ecmResults,
+    insights
+  );
 
-    // Create a container for PDF content with title
-    const pdfContainer = document.createElement("div");
-    pdfContainer.style.backgroundColor = "#ffffff";
-    pdfContainer.style.padding = "40px";
-    pdfContainer.style.width = "210mm"; // A4 width
-    pdfContainer.style.fontFamily = "system-ui, -apple-system, sans-serif";
-    pdfContainer.style.color = "#111827";
+  // Handler for generating AI executive summary
+  const handleGenerateAISummary = async (): Promise<AIExecutiveSummaryOutput> => {
+    if (!aiInput) {
+      throw new Error("Insufficient audit data to generate summary");
+    }
 
-    // Add title
-    const title = document.createElement("h1");
-    title.textContent = "Energy Audit Report";
-    title.style.fontSize = "28px";
-    title.style.fontWeight = "bold";
-    title.style.marginBottom = "30px";
-    title.style.color = "#111827";
-    title.style.borderBottom = "2px solid #d1d5db";
-    title.style.paddingBottom = "15px";
-    pdfContainer.appendChild(title);
-
-    // Clone the content
-    const contentClone = pdfRef.current.cloneNode(true) as HTMLElement;
-
-    // Ensure all child elements are visible
-    const allElements = contentClone.querySelectorAll("*");
-    allElements.forEach((el) => {
-      const htmlEl = el as HTMLElement;
-      if (htmlEl.style) {
-        // Ensure visibility
-        if (htmlEl.style.display === "none") {
-          htmlEl.style.display = "";
-        }
-        if (htmlEl.style.visibility === "hidden") {
-          htmlEl.style.visibility = "visible";
-        }
-      }
+    const response = await fetch("/api/executive-summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(aiInput),
     });
 
-    pdfContainer.appendChild(contentClone);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(error.error || "Failed to generate executive summary");
+    }
 
-    // Temporarily add to DOM (off-screen) for rendering
-    pdfContainer.style.position = "absolute";
-    pdfContainer.style.left = "-9999px";
-    pdfContainer.style.top = "0";
-    pdfContainer.style.overflow = "visible";
-    document.body.appendChild(pdfContainer);
+    const data = await response.json();
+    setAiSummary(data.summary); // Store for PDF generation
+    return data.summary;
+  };
 
+  const handleDownloadPDF = async () => {
     try {
-      await generatePDF(pdfContainer, submittedData.buildingName || "Building");
-    } finally {
-      document.body.removeChild(pdfContainer);
+      // Wait a bit to ensure all content (especially charts) is fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Prepare report data using centralized generator
+      const reportData = getReportContent(
+        submittedData,
+        annualEnergyUse,
+        annualEnergyCost,
+        endUseBreakdown,
+        ecmResults,
+        insights,
+        aiSummary
+      );
+
+      // Generate PDF using native text rendering
+      await generatePDF(reportData);
+    } catch (error) {
+      alert(`PDF Generation Error:\n${error instanceof Error ? error.message : String(error)}`);
+      console.error("Full PDF Error:", error);
     }
   };
 
@@ -111,25 +128,67 @@ export default function AuditResults({
         </div>
 
         <div ref={pdfRef} className="space-y-10">
-          <BuildingSummary data={submittedData} />
-
-          {annualEnergyUse !== null && (
-            <EnergyBaseline
-              annualEnergyUse={annualEnergyUse}
-              annualEnergyCost={annualEnergyCost}
-            />
+          {aiInput && (
+            <div className="pdf-section">
+              <AIExecutiveSummarySection onGenerate={handleGenerateAISummary} />
+            </div>
           )}
 
-          {endUseBreakdown && (
-            <EnergyBreakdown breakdown={endUseBreakdown} />
+          {insights.length > 0 && (
+            <div className="pdf-section">
+              <KeyInsightsSection insights={insights} />
+            </div>
           )}
 
           {ecmResults && ecmResults.length > 0 && (
-            <ECMTable results={ecmResults} />
+            <div className="pdf-section">
+              <TotalSavingsSummaryCard ecmResults={ecmResults} />
+            </div>
           )}
+
+          {annualEnergyUse !== null &&
+            submittedData.floorArea &&
+            parseFloat(submittedData.floorArea) > 0 &&
+            submittedData.businessType && (
+              <div className="pdf-section">
+                <EUIBenchmarkContext
+                  annualEnergyUse={annualEnergyUse}
+                  floorArea={parseFloat(submittedData.floorArea)}
+                  businessType={submittedData.businessType}
+                />
+              </div>
+            )}
+
+          <div className="pdf-section">
+            <BuildingSummary data={submittedData} />
+          </div>
+
+          {annualEnergyUse !== null && (
+            <div className="pdf-section">
+              <EnergyBaseline
+                annualEnergyUse={annualEnergyUse}
+                annualEnergyCost={annualEnergyCost}
+              />
+            </div>
+          )}
+
+          {endUseBreakdown && (
+            <div className="pdf-section">
+              <EnergyBreakdown breakdown={endUseBreakdown} />
+            </div>
+          )}
+
+          {ecmResults && ecmResults.length > 0 && (
+            <div className="pdf-section">
+              <ECMTable results={ecmResults} />
+            </div>
+          )}
+
+          <div className="pdf-section">
+            <AssumptionsPanel />
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
