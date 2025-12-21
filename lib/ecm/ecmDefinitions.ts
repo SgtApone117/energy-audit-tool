@@ -389,3 +389,4 @@ export function getApplicableECMs(businessType: BusinessType): EnhancedECMDefini
 export function getECMsByCategory(category: string): EnhancedECMDefinition[] {
   return ENHANCED_ECM_DEFINITIONS.filter(ecm => ecm.endUseCategory === category);
 }
+

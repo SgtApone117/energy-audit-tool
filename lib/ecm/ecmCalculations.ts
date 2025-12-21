@@ -321,3 +321,4 @@ export function formatSavingsRange(savings: { low: number; typical: number; high
   
   return `${formatValue(savings.low)} - ${formatValue(savings.high)}`;
 }
+

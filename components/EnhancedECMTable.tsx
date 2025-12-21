@@ -355,3 +355,4 @@ function ECMDetailCard({ ecm }: { ecm: EnhancedECMResult }) {
     </div>
   );
 }
+
