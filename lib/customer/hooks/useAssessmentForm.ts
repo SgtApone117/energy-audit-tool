@@ -258,10 +258,37 @@ export function useAssessmentForm(
     let filled = 0;
     let total = 5; // 5 possible sections
 
+    // HVAC: check if any systems added
     if (formData.hvacSystems.length > 0) filled++;
-    if (formData.lightingDetails) filled++;
-    if (formData.refrigerationEquipment) filled++;
-    if (formData.cookingEquipment) filled++;
+    
+    // Lighting: check if meaningful data entered (at least fixture count or hours)
+    if (formData.lightingDetails && 
+        (formData.lightingDetails.totalFixtures !== null || 
+         formData.lightingDetails.hoursPerDay !== null)) {
+      filled++;
+    }
+    
+    // Refrigeration: check if any equipment indicated
+    if (formData.refrigerationEquipment && 
+        (formData.refrigerationEquipment.hasWalkInCooler || 
+         formData.refrigerationEquipment.hasWalkInFreezer ||
+         formData.refrigerationEquipment.reachInUnits > 0 ||
+         formData.refrigerationEquipment.displayCases > 0 ||
+         formData.refrigerationEquipment.iceMachines > 0)) {
+      filled++;
+    }
+    
+    // Cooking: check if any equipment count > 0
+    if (formData.cookingEquipment && 
+        (formData.cookingEquipment.ovens > 0 ||
+         formData.cookingEquipment.ranges > 0 ||
+         formData.cookingEquipment.fryers > 0 ||
+         formData.cookingEquipment.grills > 0 ||
+         formData.cookingEquipment.dishwashers > 0)) {
+      filled++;
+    }
+    
+    // Schedule: always counts if set (has default values)
     if (formData.operatingSchedule) filled++;
 
     return Math.round((filled / total) * 100);
