@@ -12,8 +12,8 @@ export default function AuditPage() {
   const params = useParams();
   const router = useRouter();
   const auditId = params.auditId as string;
-  
-  const { isLoaded, getAudit, updateAudit, setCurrentAuditId } = useAuditStorage();
+
+  const { isLoaded, getAudit, updateAudit, setCurrentAuditId, resetAudit } = useAuditStorage();
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -33,10 +33,23 @@ export default function AuditPage() {
   // Handle save
   const handleSave = (updates: Partial<AuditData>) => {
     if (!audit) return;
-    
+
     const updatedAudit = { ...audit, ...updates, updatedAt: new Date().toISOString() };
     setAudit(updatedAudit);
     updateAudit(auditId, updates);
+  };
+
+  // Handle reset
+  const handleReset = () => {
+    if (!audit) return;
+
+    const success = resetAudit(auditId);
+    if (success) {
+      const freshAudit = getAudit(auditId);
+      if (freshAudit) {
+        setAudit(freshAudit);
+      }
+    }
   };
 
   // Loading state
@@ -76,5 +89,5 @@ export default function AuditPage() {
     );
   }
 
-  return <AuditWorkspace audit={audit} onSave={handleSave} />;
+  return <AuditWorkspace audit={audit} onSave={handleSave} onReset={handleReset} />;
 }

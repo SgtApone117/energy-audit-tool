@@ -202,18 +202,41 @@ export function useAuditStorage() {
       // Generate new ID to avoid conflicts
       audit.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       audit.updatedAt = new Date().toISOString();
-      
+
       setState(prev => ({
         audits: [...prev.audits, audit],
         currentAuditId: audit.id,
       }));
-      
+
       return audit;
     } catch (error) {
       console.error('Failed to import audit:', error);
       return null;
     }
   }, []);
+
+  // Reset audit to empty state while keeping ID and name
+  const resetAudit = useCallback((id: string): boolean => {
+    const original = getAudit(id);
+    if (!original) return false;
+
+    const emptyAudit = createEmptyAudit(original.name, original.inspectionType);
+    const resetAuditData: AuditData = {
+      ...emptyAudit,
+      id: original.id,
+      createdAt: original.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setState(prev => ({
+      ...prev,
+      audits: prev.audits.map(audit =>
+        audit.id === id ? resetAuditData : audit
+      ),
+    }));
+
+    return true;
+  }, [getAudit]);
 
   return {
     isLoaded,
@@ -230,5 +253,6 @@ export function useAuditStorage() {
     getAllAudits,
     exportAudit,
     importAudit,
+    resetAudit,
   };
 }

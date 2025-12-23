@@ -3,11 +3,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Alert, Card, CardContent } from '@/components/ui';
-import { 
-  Building2, 
-  Camera, 
-  Settings, 
-  FileText, 
+import {
+  Building2,
+  Camera,
+  Settings,
+  FileText,
   ArrowLeft,
   ArrowRight,
   CheckCircle,
@@ -17,7 +17,8 @@ import {
   DollarSign,
   Download,
   Printer,
-  Lightbulb
+  Lightbulb,
+  RotateCcw
 } from 'lucide-react';
 import { AuditData, AuditFinding, PHOTO_CATEGORIES, InspectionDiscrepancy } from '@/lib/auditor/types';
 import { generateECMRecommendations, calculateTotalSavings } from '@/lib/auditor/ecmGenerator';
@@ -33,6 +34,7 @@ import { AuditReportPrint } from './AuditReportPrint';
 interface AuditWorkspaceProps {
   audit: AuditData;
   onSave: (updates: Partial<AuditData>) => void;
+  onReset: () => void;
 }
 
 type TabId = 'building' | 'photos' | 'lighting' | 'equipment' | 'submittal' | 'utilities' | 'findings' | 'report';
@@ -67,10 +69,11 @@ const TAB_LABELS: Record<TabId, string> = {
   report: 'Report',
 };
 
-export function AuditWorkspace({ audit, onSave }: AuditWorkspaceProps) {
+export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>('building');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Auto-save with debounce
   const handleUpdate = useCallback((updates: Partial<AuditData>) => {
@@ -216,15 +219,22 @@ export function AuditWorkspace({ audit, onSave }: AuditWorkspaceProps) {
   // Mark as in-progress if any data exists
   const updateStatus = () => {
     if (audit.status === 'draft') {
-      const hasData = 
-        audit.buildingInfo.name || 
-        audit.photos.length > 0 || 
+      const hasData =
+        audit.buildingInfo.name ||
+        audit.photos.length > 0 ||
         audit.hvacUnits.length > 0 ||
         (audit.findings?.length || 0) > 0;
       if (hasData) {
         handleUpdate({ status: 'in-progress' });
       }
     }
+  };
+
+  // Handle reset confirmation
+  const handleResetConfirm = () => {
+    onReset();
+    setShowResetConfirm(false);
+    setActiveTab('building');
   };
 
   return (
@@ -264,6 +274,14 @@ export function AuditWorkspace({ audit, onSave }: AuditWorkspaceProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowResetConfirm(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Start Over
+              </Button>
               {audit.status !== 'completed' && (
                 <Button
                   variant="outline"
@@ -501,13 +519,49 @@ export function AuditWorkspace({ audit, onSave }: AuditWorkspaceProps) {
         )}
 
         {activeTab === 'report' && (
-          <ReportTab 
-            audit={audit} 
+          <ReportTab
+            audit={audit}
             onNotesChange={(generalNotes) => handleUpdate({ generalNotes })}
             onAuditorChange={(auditorName) => handleUpdate({ auditorName })}
           />
         )}
       </div>
+
+      {/* Reset Confirmation Dialog */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Start Over?
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  This will clear all audit data including photos, equipment inventory, lighting zones, and findings. This action cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowResetConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleResetConfirm}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Start Over
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
