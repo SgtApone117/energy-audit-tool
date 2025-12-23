@@ -158,23 +158,23 @@ export default function HomePage() {
               <tbody className="text-sm">
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Energy benchmarking</td>
-                  <td className="py-3 px-4 text-center">✓</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Savings recommendations</td>
-                  <td className="py-3 px-4 text-center">✓</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Utility bill analysis</td>
-                  <td className="py-3 px-4 text-center">✓</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Photo documentation</td>
                   <td className="py-3 px-4 text-center">—</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Detailed equipment inventory</td>
@@ -184,16 +184,16 @@ export default function HomePage() {
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Multiple audit management</td>
                   <td className="py-3 px-4 text-center">—</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 text-gray-700">Export/Import audits</td>
                   <td className="py-3 px-4 text-center">—</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 text-gray-700">AI-powered summary</td>
-                  <td className="py-3 px-4 text-center">✓</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
                   <td className="py-3 px-4 text-center">Coming Soon</td>
                 </tr>
               </tbody>

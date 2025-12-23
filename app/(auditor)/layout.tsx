@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Header, Footer } from '@/components/shared';
 
 export const metadata: Metadata = {
   title: 'Energy Auditor | On-Site Audit Tool',
@@ -11,13 +10,5 @@ export default function AuditorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      <main className="flex-grow">
-        {children}
-      </main>
-      <Footer />
-    </div>
-  );
+  return <>{children}</>;
 }

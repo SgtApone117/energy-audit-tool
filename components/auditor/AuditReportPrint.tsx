@@ -118,11 +118,11 @@ export function AuditReportPrint({ audit }: AuditReportPrintProps) {
       <div className="text-center mb-12 avoid-break">
         <div className="border-b-4 border-blue-600 pb-8 mb-8">
           <div className={`inline-block px-4 py-1 rounded-full text-sm font-medium mb-4 ${
-            audit.inspectionType === 'post' 
-              ? 'bg-green-100 text-green-800' 
+            audit.inspectionType === 'post'
+              ? 'bg-green-100 text-green-800'
               : 'bg-amber-100 text-amber-800'
           }`}>
-            {audit.inspectionType === 'post' ? '✓ Post-Installation Inspection' : '📋 Pre-Installation Inspection'}
+            {audit.inspectionType === 'post' ? 'Post-Installation Inspection' : 'Pre-Installation Inspection'}
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Energy Inspection Report</h1>
           <p className="text-xl text-gray-600">{audit.name}</p>
@@ -338,7 +338,7 @@ export function AuditReportPrint({ audit }: AuditReportPrintProps) {
                       <td className={`text-right p-2 ${zone.lampsOutCount > 0 ? 'text-amber-600 font-medium' : ''}`}>
                         {zone.lampsOutCount || 0}
                       </td>
-                      <td className="text-center p-2">{zone.verified ? '✓' : '—'}</td>
+                      <td className="text-center p-2">{zone.verified ? 'Yes' : '—'}</td>
                     </tr>
                   ))}
                   {/* Totals Row */}
@@ -368,13 +368,13 @@ export function AuditReportPrint({ audit }: AuditReportPrintProps) {
 
               {/* Verification Status */}
               <div className={`mt-3 p-3 rounded text-sm ${
-                lightingStats.isFullyVerified 
-                  ? 'bg-green-50 border border-green-200' 
+                lightingStats.isFullyVerified
+                  ? 'bg-green-50 border border-green-200'
                   : 'bg-yellow-50 border border-yellow-200'
               }`}>
                 <strong>Verification Status:</strong>{' '}
-                {lightingStats.isFullyVerified 
-                  ? `All ${lightingStats.zones} zones verified ✓` 
+                {lightingStats.isFullyVerified
+                  ? `All ${lightingStats.zones} zones verified`
                   : `${lightingStats.verifiedZones} of ${lightingStats.zones} zones verified`
                 }
               </div>

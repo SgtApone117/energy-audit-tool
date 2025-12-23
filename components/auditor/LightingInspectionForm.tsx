@@ -230,7 +230,7 @@ export function LightingInspectionForm({
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-green-600">✓</div>
+                  <div className="text-2xl font-bold text-green-600">0</div>
                   <div className="text-xs text-green-700">No Lamps Out</div>
                 </>
               )}

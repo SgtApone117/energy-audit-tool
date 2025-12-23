@@ -125,7 +125,7 @@ export function UtilityBills({
               {filledBillsCount}/12 months entered
             </span>
             <span className="text-xs text-gray-500">
-              {filledBillsCount >= 12 ? '✓ Complete' : filledBillsCount >= 3 ? 'Minimum met' : 'Need at least 3 months'}
+              {filledBillsCount >= 12 ? 'Complete' : filledBillsCount >= 3 ? 'Minimum met' : 'Need at least 3 months'}
             </span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
