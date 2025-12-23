@@ -4,6 +4,7 @@ import { Input, Select, InfoTooltip } from '@/components/ui';
 import { Building2 } from 'lucide-react';
 import { CustomerAssessmentForm } from '@/lib/customer/types';
 import { getStateFromZip, getStateName } from '@/lib/core/data/zipToState';
+import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 import { useEffect } from 'react';
 
 const BUSINESS_TYPES = [
@@ -55,6 +56,7 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
           onChange={(e) => onUpdate('businessName', e.target.value)}
           error={errors.businessName}
           required
+          tooltip={<InfoTooltip content={TOOLTIP_CONTENT.businessBasics.businessName} />}
         />
 
         <Select
@@ -65,6 +67,7 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
           onChange={(e) => onUpdate('businessType', e.target.value)}
           error={errors.businessType}
           required
+          tooltip={<InfoTooltip content={TOOLTIP_CONTENT.businessBasics.businessType} />}
         />
 
         <div className="flex gap-4">
@@ -93,6 +96,7 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
               error={errors.zipCode}
               required
               maxLength={5}
+              tooltip={<InfoTooltip content={TOOLTIP_CONTENT.businessBasics.zipCode} />}
             />
           </div>
           <div className="flex-1">
@@ -111,31 +115,21 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
           </div>
         </div>
 
-        <div className="relative">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <Input
-                label="Building Square Footage"
-                placeholder="e.g., 5000"
-                type="number"
-                min={1}
-                value={formData.squareFootage ?? ''}
-                onChange={(e) => {
-                  const value = e.target.value ? parseInt(e.target.value, 10) : null;
-                  onUpdate('squareFootage', value);
-                }}
-                error={errors.squareFootage}
-                required
-              />
-            </div>
-            <div className="mt-6">
-              <InfoTooltip content="Enter the total heated/cooled square footage of your business space. This helps us calculate your energy use intensity (EUI) for benchmarking." />
-            </div>
-          </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Total heated/cooled floor area in square feet
-          </p>
-        </div>
+        <Input
+          label="Building Square Footage"
+          placeholder="e.g., 5000"
+          type="number"
+          min={1}
+          value={formData.squareFootage ?? ''}
+          onChange={(e) => {
+            const value = e.target.value ? parseInt(e.target.value, 10) : null;
+            onUpdate('squareFootage', value);
+          }}
+          error={errors.squareFootage}
+          required
+          tooltip={<InfoTooltip content={TOOLTIP_CONTENT.businessBasics.squareFootage} />}
+          hint="Total heated/cooled floor area in square feet"
+        />
       </div>
 
       {/* Why we need this section */}

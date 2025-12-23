@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { FileUpload, Button, Alert } from '@/components/ui';
+import { FileUpload, Button, Alert, InfoTooltip } from '@/components/ui';
 import { Receipt, Upload, Edit3, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { UtilityBill, CustomerAssessmentForm } from '@/lib/customer/types';
 import { parseUtilityBillCSV, generateCSVTemplate } from '@/lib/customer/csv/billParser';
+import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 
 interface UtilityBillsProps {
   formData: CustomerAssessmentForm;
@@ -235,11 +236,36 @@ export function UtilityBills({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-left py-2 px-3 font-medium text-gray-700">Month</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-700">Electricity (kWh)</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-700">Elec. Cost ($)</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-700">Gas (therms)</th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-700">Gas Cost ($)</th>
+                  <th className="text-left py-2 px-3 font-medium text-gray-700">
+                    <div className="flex items-center gap-1">
+                      Month
+                      <InfoTooltip content={TOOLTIP_CONTENT.utilityBills.monthYear} position="top" />
+                    </div>
+                  </th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-700">
+                    <div className="flex items-center justify-end gap-1">
+                      Electricity (kWh)
+                      <InfoTooltip content={TOOLTIP_CONTENT.utilityBills.electricityKwh} position="top" />
+                    </div>
+                  </th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-700">
+                    <div className="flex items-center justify-end gap-1">
+                      Elec. Cost ($)
+                      <InfoTooltip content={TOOLTIP_CONTENT.utilityBills.electricityCost} position="top" />
+                    </div>
+                  </th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-700">
+                    <div className="flex items-center justify-end gap-1">
+                      Gas (therms)
+                      <InfoTooltip content={TOOLTIP_CONTENT.utilityBills.naturalGasTherms} position="top" />
+                    </div>
+                  </th>
+                  <th className="text-right py-2 px-3 font-medium text-gray-700">
+                    <div className="flex items-center justify-end gap-1">
+                      Gas Cost ($)
+                      <InfoTooltip content={TOOLTIP_CONTENT.utilityBills.gasCost} position="top" />
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>

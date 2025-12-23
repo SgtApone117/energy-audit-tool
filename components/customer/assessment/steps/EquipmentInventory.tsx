@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Input, Select, Button, Accordion, AccordionItem } from '@/components/ui';
+import { Input, Select, Button, Accordion, AccordionItem, InfoTooltip } from '@/components/ui';
 import { Settings, Plus, Trash2, Thermometer, Lightbulb, Snowflake, Flame, Clock } from 'lucide-react';
+import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 import {
   CustomerAssessmentForm,
   HVACSystem,

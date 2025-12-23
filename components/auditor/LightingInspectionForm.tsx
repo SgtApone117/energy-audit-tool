@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, InfoTooltip } from '@/components/ui';
+import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 import { 
   Lightbulb, 
   Plus, 

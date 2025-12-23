@@ -4,6 +4,7 @@ interface CardProps {
   children: ReactNode;
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  hover?: boolean;
 }
 
 interface CardHeaderProps {
@@ -39,9 +40,15 @@ const paddingStyles = {
   lg: 'p-8',
 };
 
-export function Card({ children, className = '', padding = 'md' }: CardProps) {
+export function Card({ children, className = '', padding = 'md', hover = false }: CardProps) {
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm ${paddingStyles[padding]} ${className}`}>
+    <div className={`
+      bg-white rounded-md border border-gray-200 shadow-soft
+      transition-all duration-250
+      ${hover ? 'hover:shadow-lg hover:border-gray-300' : ''}
+      ${paddingStyles[padding]}
+      ${className}
+    `}>
       {children}
     </div>
   );
@@ -49,7 +56,7 @@ export function Card({ children, className = '', padding = 'md' }: CardProps) {
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div className={`mb-6 ${className}`}>
       {children}
     </div>
   );
@@ -57,7 +64,7 @@ export function CardHeader({ children, className = '' }: CardHeaderProps) {
 
 export function CardTitle({ children, className = '', as: Component = 'h3' }: CardTitleProps) {
   return (
-    <Component className={`text-xl font-semibold text-gray-900 ${className}`}>
+    <Component className={`text-xl font-semibold text-gray-900 tracking-tight ${className}`}>
       {children}
     </Component>
   );
@@ -65,7 +72,7 @@ export function CardTitle({ children, className = '', as: Component = 'h3' }: Ca
 
 export function CardDescription({ children, className = '' }: CardDescriptionProps) {
   return (
-    <p className={`text-sm text-gray-600 mt-1 ${className}`}>
+    <p className={`text-sm text-secondary-600 mt-1.5 leading-relaxed ${className}`}>
       {children}
     </p>
   );
@@ -81,7 +88,7 @@ export function CardContent({ children, className = '' }: CardContentProps) {
 
 export function CardFooter({ children, className = '' }: CardFooterProps) {
   return (
-    <div className={`mt-4 pt-4 border-t border-gray-100 ${className}`}>
+    <div className={`mt-6 pt-6 border-t border-gray-200 ${className}`}>
       {children}
     </div>
   );
