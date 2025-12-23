@@ -220,9 +220,13 @@ export function AssessmentForm() {
           {currentStep > 1 && (
             <Button variant="outline" onClick={handlePrevious}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Back to {STEPS[currentStep - 2]}
             </Button>
           )}
+        </div>
+
+        <div className="text-sm text-gray-500">
+          Step {currentStep} of {STEPS.length}
         </div>
 
         <div className="flex items-center gap-3">
@@ -237,7 +241,7 @@ export function AssessmentForm() {
           {/* Continue/Generate Report button */}
           {currentStep < 4 ? (
             <Button onClick={handleNext} disabled={!canProceed}>
-              Continue
+              Continue to {STEPS[currentStep]}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
