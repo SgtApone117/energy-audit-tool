@@ -119,21 +119,461 @@ export const COMMON_FIXTURE_CONFIGS: { id: string; label: string; lampsPerFixtur
   { id: 't8-4lamp-4ft', label: '4-Lamp T8 4ft Troffer (112W)', lampsPerFixture: 4, fixtureType: 'T8-4ft-32W-Electronic', totalWatts: 112 },
   { id: 't8-3lamp-4ft', label: '3-Lamp T8 4ft Troffer (84W)', lampsPerFixture: 3, fixtureType: 'T8-4ft-32W-Electronic', totalWatts: 84 },
   { id: 't8-2lamp-4ft', label: '2-Lamp T8 4ft Troffer (56W)', lampsPerFixture: 2, fixtureType: 'T8-4ft-32W-Electronic', totalWatts: 56 },
-  
+
   // T12 (older, being replaced)
   { id: 't12-4lamp-4ft', label: '4-Lamp T12 4ft (176W)', lampsPerFixture: 4, fixtureType: 'T12-4ft-40W-Magnetic', totalWatts: 176 },
   { id: 't12-2lamp-4ft', label: '2-Lamp T12 4ft (88W)', lampsPerFixture: 2, fixtureType: 'T12-4ft-40W-Magnetic', totalWatts: 88 },
-  
+
   // LED Replacements
   { id: 'led-2x4-troffer', label: 'LED 2x4 Troffer (40W)', lampsPerFixture: 1, fixtureType: 'LED-Fixture-2x4-40W', totalWatts: 40 },
   { id: 'led-2x4-troffer-50w', label: 'LED 2x4 Troffer (50W)', lampsPerFixture: 1, fixtureType: 'LED-Fixture-2x4-50W', totalWatts: 50 },
   { id: 'led-2x2-troffer', label: 'LED 2x2 Troffer (32W)', lampsPerFixture: 1, fixtureType: 'LED-Fixture-2x2-32W', totalWatts: 32 },
   { id: 'led-4lamp-tube', label: '4-Lamp LED Tube Retrofit (60W)', lampsPerFixture: 4, fixtureType: 'LED-Tube-4ft-15W', totalWatts: 60 },
-  
+
   // HID
   { id: 'hid-mh-400', label: 'Metal Halide 400W', lampsPerFixture: 1, fixtureType: 'HID-MH-400W', totalWatts: 460 },
   { id: 'hid-hps-250', label: 'High Pressure Sodium 250W', lampsPerFixture: 1, fixtureType: 'HID-HPS-250W', totalWatts: 275 },
 ];
+
+// ============================================
+// HVAC EQUIPMENT DATABASE
+// ============================================
+
+export type HVACSystemCategory = 'cooling' | 'heating' | 'combined' | 'ventilation';
+
+export interface HVACConfig {
+  id: string;
+  label: string;
+  category: HVACSystemCategory;
+  systemType: string;
+  capacityTons?: number;
+  capacityBTU?: number;
+  capacityKW?: number;
+  fuelType: 'Electric' | 'Natural Gas' | 'Fuel Oil' | 'Propane';
+  typicalSEER?: number; // Seasonal Energy Efficiency Ratio (cooling)
+  typicalEER?: number; // Energy Efficiency Ratio (cooling)
+  typicalAFUE?: number; // Annual Fuel Utilization Efficiency (heating)
+  typicalHSPF?: number; // Heating Seasonal Performance Factor (heat pumps)
+  description: string;
+}
+
+// Common commercial HVAC configurations
+export const COMMON_HVAC_CONFIGS: HVACConfig[] = [
+  // === PACKAGED ROOFTOP UNITS (RTU) ===
+  { 
+    id: 'rtu-3-ton-electric',
+    label: 'RTU 3-Ton Electric Cooling',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 3,
+    capacityBTU: 36000,
+    fuelType: 'Electric',
+    typicalSEER: 14,
+    typicalEER: 11.2,
+    description: 'Small commercial RTU with electric heating/cooling'
+  },
+  { 
+    id: 'rtu-5-ton-gas',
+    label: 'RTU 5-Ton w/ Gas Heat',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 5,
+    capacityBTU: 60000,
+    fuelType: 'Natural Gas',
+    typicalSEER: 14,
+    typicalEER: 11.2,
+    typicalAFUE: 80,
+    description: 'Medium commercial RTU with gas heating'
+  },
+  { 
+    id: 'rtu-7.5-ton-gas',
+    label: 'RTU 7.5-Ton w/ Gas Heat',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 7.5,
+    capacityBTU: 90000,
+    fuelType: 'Natural Gas',
+    typicalSEER: 13,
+    typicalEER: 11.0,
+    typicalAFUE: 80,
+    description: 'Medium-large commercial RTU'
+  },
+  { 
+    id: 'rtu-10-ton-gas',
+    label: 'RTU 10-Ton w/ Gas Heat',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 10,
+    capacityBTU: 120000,
+    fuelType: 'Natural Gas',
+    typicalSEER: 12,
+    typicalEER: 10.8,
+    typicalAFUE: 80,
+    description: 'Large commercial RTU'
+  },
+  { 
+    id: 'rtu-15-ton-gas',
+    label: 'RTU 15-Ton w/ Gas Heat',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 15,
+    capacityBTU: 180000,
+    fuelType: 'Natural Gas',
+    typicalSEER: 11,
+    typicalEER: 10.5,
+    typicalAFUE: 80,
+    description: 'Large commercial RTU'
+  },
+  { 
+    id: 'rtu-20-ton-gas',
+    label: 'RTU 20-Ton w/ Gas Heat',
+    category: 'combined',
+    systemType: 'Packaged Rooftop Unit',
+    capacityTons: 20,
+    capacityBTU: 240000,
+    fuelType: 'Natural Gas',
+    typicalSEER: 10,
+    typicalEER: 10.0,
+    typicalAFUE: 80,
+    description: 'Extra-large commercial RTU'
+  },
+
+  // === SPLIT SYSTEMS ===
+  { 
+    id: 'split-2-ton',
+    label: 'Split System 2-Ton',
+    category: 'cooling',
+    systemType: 'Split System',
+    capacityTons: 2,
+    capacityBTU: 24000,
+    fuelType: 'Electric',
+    typicalSEER: 15,
+    typicalEER: 12.5,
+    description: 'Small commercial split AC'
+  },
+  { 
+    id: 'split-3-ton',
+    label: 'Split System 3-Ton',
+    category: 'cooling',
+    systemType: 'Split System',
+    capacityTons: 3,
+    capacityBTU: 36000,
+    fuelType: 'Electric',
+    typicalSEER: 15,
+    typicalEER: 12.5,
+    description: 'Small-medium commercial split AC'
+  },
+  { 
+    id: 'split-5-ton',
+    label: 'Split System 5-Ton',
+    category: 'cooling',
+    systemType: 'Split System',
+    capacityTons: 5,
+    capacityBTU: 60000,
+    fuelType: 'Electric',
+    typicalSEER: 14,
+    typicalEER: 12.0,
+    description: 'Medium commercial split AC'
+  },
+
+  // === HEAT PUMPS ===
+  { 
+    id: 'heatpump-2-ton',
+    label: 'Heat Pump 2-Ton',
+    category: 'combined',
+    systemType: 'Heat Pump',
+    capacityTons: 2,
+    capacityBTU: 24000,
+    fuelType: 'Electric',
+    typicalSEER: 16,
+    typicalEER: 13,
+    typicalHSPF: 9.0,
+    description: 'Small heat pump - heating & cooling'
+  },
+  { 
+    id: 'heatpump-3-ton',
+    label: 'Heat Pump 3-Ton',
+    category: 'combined',
+    systemType: 'Heat Pump',
+    capacityTons: 3,
+    capacityBTU: 36000,
+    fuelType: 'Electric',
+    typicalSEER: 16,
+    typicalEER: 13,
+    typicalHSPF: 9.0,
+    description: 'Medium heat pump - heating & cooling'
+  },
+  { 
+    id: 'heatpump-5-ton',
+    label: 'Heat Pump 5-Ton',
+    category: 'combined',
+    systemType: 'Heat Pump',
+    capacityTons: 5,
+    capacityBTU: 60000,
+    fuelType: 'Electric',
+    typicalSEER: 15,
+    typicalEER: 12.5,
+    typicalHSPF: 8.5,
+    description: 'Large heat pump - heating & cooling'
+  },
+
+  // === MINI-SPLITS / DUCTLESS ===
+  { 
+    id: 'minisplit-1-ton',
+    label: 'Mini-Split 1-Ton (12k BTU)',
+    category: 'combined',
+    systemType: 'Split System',
+    capacityTons: 1,
+    capacityBTU: 12000,
+    fuelType: 'Electric',
+    typicalSEER: 20,
+    typicalEER: 15,
+    typicalHSPF: 10,
+    description: 'Ductless mini-split heat pump'
+  },
+  { 
+    id: 'minisplit-1.5-ton',
+    label: 'Mini-Split 1.5-Ton (18k BTU)',
+    category: 'combined',
+    systemType: 'Split System',
+    capacityTons: 1.5,
+    capacityBTU: 18000,
+    fuelType: 'Electric',
+    typicalSEER: 19,
+    typicalEER: 14,
+    typicalHSPF: 10,
+    description: 'Ductless mini-split heat pump'
+  },
+  { 
+    id: 'minisplit-2-ton',
+    label: 'Mini-Split 2-Ton (24k BTU)',
+    category: 'combined',
+    systemType: 'Split System',
+    capacityTons: 2,
+    capacityBTU: 24000,
+    fuelType: 'Electric',
+    typicalSEER: 18,
+    typicalEER: 13,
+    typicalHSPF: 9.5,
+    description: 'Ductless mini-split heat pump'
+  },
+
+  // === PTAC / WINDOW UNITS ===
+  { 
+    id: 'ptac-9k',
+    label: 'PTAC 9,000 BTU',
+    category: 'combined',
+    systemType: 'PTAC',
+    capacityBTU: 9000,
+    fuelType: 'Electric',
+    typicalEER: 11.0,
+    description: 'Through-wall packaged terminal AC'
+  },
+  { 
+    id: 'ptac-12k',
+    label: 'PTAC 12,000 BTU',
+    category: 'combined',
+    systemType: 'PTAC',
+    capacityTons: 1,
+    capacityBTU: 12000,
+    fuelType: 'Electric',
+    typicalEER: 10.5,
+    description: 'Through-wall packaged terminal AC'
+  },
+  { 
+    id: 'ptac-15k',
+    label: 'PTAC 15,000 BTU',
+    category: 'combined',
+    systemType: 'PTAC',
+    capacityBTU: 15000,
+    fuelType: 'Electric',
+    typicalEER: 10.0,
+    description: 'Through-wall packaged terminal AC'
+  },
+  { 
+    id: 'window-ac-5k',
+    label: 'Window AC 5,000 BTU',
+    category: 'cooling',
+    systemType: 'Window AC',
+    capacityBTU: 5000,
+    fuelType: 'Electric',
+    typicalEER: 10.0,
+    description: 'Small window air conditioner'
+  },
+  { 
+    id: 'window-ac-10k',
+    label: 'Window AC 10,000 BTU',
+    category: 'cooling',
+    systemType: 'Window AC',
+    capacityBTU: 10000,
+    fuelType: 'Electric',
+    typicalEER: 10.5,
+    description: 'Medium window air conditioner'
+  },
+
+  // === FURNACES ===
+  { 
+    id: 'furnace-60k-gas',
+    label: 'Gas Furnace 60,000 BTU',
+    category: 'heating',
+    systemType: 'Furnace',
+    capacityBTU: 60000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 80,
+    description: 'Standard efficiency gas furnace'
+  },
+  { 
+    id: 'furnace-80k-gas',
+    label: 'Gas Furnace 80,000 BTU',
+    category: 'heating',
+    systemType: 'Furnace',
+    capacityBTU: 80000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 80,
+    description: 'Standard efficiency gas furnace'
+  },
+  { 
+    id: 'furnace-100k-gas',
+    label: 'Gas Furnace 100,000 BTU',
+    category: 'heating',
+    systemType: 'Furnace',
+    capacityBTU: 100000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 80,
+    description: 'Standard efficiency gas furnace'
+  },
+  { 
+    id: 'furnace-80k-gas-he',
+    label: 'Gas Furnace 80,000 BTU (High Eff)',
+    category: 'heating',
+    systemType: 'Furnace',
+    capacityBTU: 80000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 95,
+    description: 'High efficiency condensing gas furnace'
+  },
+
+  // === BOILERS ===
+  { 
+    id: 'boiler-100k-gas',
+    label: 'Gas Boiler 100,000 BTU',
+    category: 'heating',
+    systemType: 'Boiler',
+    capacityBTU: 100000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 82,
+    description: 'Commercial gas boiler'
+  },
+  { 
+    id: 'boiler-200k-gas',
+    label: 'Gas Boiler 200,000 BTU',
+    category: 'heating',
+    systemType: 'Boiler',
+    capacityBTU: 200000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 82,
+    description: 'Commercial gas boiler'
+  },
+  { 
+    id: 'boiler-300k-gas',
+    label: 'Gas Boiler 300,000 BTU',
+    category: 'heating',
+    systemType: 'Boiler',
+    capacityBTU: 300000,
+    fuelType: 'Natural Gas',
+    typicalAFUE: 82,
+    description: 'Large commercial gas boiler'
+  },
+  { 
+    id: 'boiler-100k-oil',
+    label: 'Oil Boiler 100,000 BTU',
+    category: 'heating',
+    systemType: 'Boiler',
+    capacityBTU: 100000,
+    fuelType: 'Fuel Oil',
+    typicalAFUE: 85,
+    description: 'Commercial oil-fired boiler'
+  },
+
+  // === VRF SYSTEMS ===
+  { 
+    id: 'vrf-4-ton',
+    label: 'VRF System 4-Ton',
+    category: 'combined',
+    systemType: 'VRF System',
+    capacityTons: 4,
+    capacityBTU: 48000,
+    fuelType: 'Electric',
+    typicalSEER: 20,
+    typicalEER: 14,
+    typicalHSPF: 10,
+    description: 'Variable Refrigerant Flow system'
+  },
+  { 
+    id: 'vrf-8-ton',
+    label: 'VRF System 8-Ton',
+    category: 'combined',
+    systemType: 'VRF System',
+    capacityTons: 8,
+    capacityBTU: 96000,
+    fuelType: 'Electric',
+    typicalSEER: 18,
+    typicalEER: 13,
+    typicalHSPF: 9.5,
+    description: 'Variable Refrigerant Flow system'
+  },
+  { 
+    id: 'vrf-12-ton',
+    label: 'VRF System 12-Ton',
+    category: 'combined',
+    systemType: 'VRF System',
+    capacityTons: 12,
+    capacityBTU: 144000,
+    fuelType: 'Electric',
+    typicalSEER: 17,
+    typicalEER: 12.5,
+    typicalHSPF: 9.0,
+    description: 'Variable Refrigerant Flow system'
+  },
+];
+
+// Group HVAC configs by category for UI
+export const HVAC_CONFIG_GROUPS: { category: HVACSystemCategory; label: string; configs: HVACConfig[] }[] = [
+  { 
+    category: 'combined', 
+    label: 'Heating & Cooling (Combined)', 
+    configs: COMMON_HVAC_CONFIGS.filter(c => c.category === 'combined') 
+  },
+  { 
+    category: 'cooling', 
+    label: 'Cooling Only', 
+    configs: COMMON_HVAC_CONFIGS.filter(c => c.category === 'cooling') 
+  },
+  { 
+    category: 'heating', 
+    label: 'Heating Only', 
+    configs: COMMON_HVAC_CONFIGS.filter(c => c.category === 'heating') 
+  },
+];
+
+// Helper to create an HVAC unit from a config
+export function createHVACFromConfig(config: HVACConfig): Omit<AuditHVACUnit, 'id'> {
+  return {
+    systemType: config.systemType,
+    capacity: config.capacityTons || (config.capacityBTU ? config.capacityBTU / 12000 : undefined),
+    capacityUnit: config.capacityTons ? 'tons' : 'BTU/hr',
+    fuelType: config.fuelType,
+    condition: 'good',
+    hasSmartThermostat: false,
+    efficiencyRating: config.typicalSEER 
+      ? `SEER ${config.typicalSEER}` 
+      : config.typicalAFUE 
+        ? `AFUE ${config.typicalAFUE}%` 
+        : undefined,
+    notes: config.description,
+    photoIds: [],
+  };
+}
 
 // Photo with metadata
 export interface AuditPhoto {

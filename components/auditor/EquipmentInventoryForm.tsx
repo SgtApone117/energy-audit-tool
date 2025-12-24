@@ -1,16 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, InfoTooltip } from '@/components/ui';
 import { 
   Fan, 
   Thermometer, 
   Plus, 
-  Trash2
+  Trash2,
+  Zap,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { 
   AuditHVACUnit, 
   AuditEquipment,
   generateId,
+  HVAC_CONFIG_GROUPS,
+  HVACConfig,
+  createHVACFromConfig,
 } from '@/lib/auditor/types';
 import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 
@@ -59,6 +66,9 @@ export function EquipmentInventoryForm({
   onHVACChange,
   onEquipmentChange,
 }: EquipmentInventoryFormProps) {
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>('combined');
+
   // HVAC handlers
   const addHVAC = () => {
     const newUnit: AuditHVACUnit = {
@@ -69,6 +79,15 @@ export function EquipmentInventoryForm({
       fuelType: 'Electric',
       hasSmartThermostat: false,
       photoIds: [],
+    };
+    onHVACChange([...hvacUnits, newUnit]);
+  };
+
+  const addHVACFromConfig = (config: HVACConfig) => {
+    const baseUnit = createHVACFromConfig(config);
+    const newUnit: AuditHVACUnit = {
+      id: generateId(),
+      ...baseUnit,
     };
     onHVACChange([...hvacUnits, newUnit]);
   };
@@ -111,16 +130,82 @@ export function EquipmentInventoryForm({
               <Fan className="w-5 h-5 text-blue-600" />
               HVAC Systems ({hvacUnits.length})
             </CardTitle>
-            <Button size="sm" onClick={addHVAC}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Unit
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => setShowQuickAdd(!showQuickAdd)}
+              >
+                <Zap className="w-4 h-4 mr-1" />
+                Quick Add
+                {showQuickAdd ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+              </Button>
+              <Button size="sm" onClick={addHVAC}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add Custom
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {/* Quick Add Panel */}
+          {showQuickAdd && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-medium text-blue-900 mb-3">
+                Quick Add Common HVAC Equipment
+              </h3>
+              <p className="text-xs text-blue-700 mb-4">
+                Select a common configuration to auto-fill specifications
+              </p>
+              
+              <div className="space-y-3">
+                {HVAC_CONFIG_GROUPS.map((group) => (
+                  <div key={group.category} className="border border-blue-200 rounded-lg bg-white overflow-hidden">
+                    <button
+                      onClick={() => setExpandedGroup(expandedGroup === group.category ? null : group.category)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                    >
+                      <span>{group.label}</span>
+                      <span className="text-xs text-gray-500">
+                        {group.configs.length} options
+                        {expandedGroup === group.category ? (
+                          <ChevronUp className="w-4 h-4 inline ml-1" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 inline ml-1" />
+                        )}
+                      </span>
+                    </button>
+                    
+                    {expandedGroup === group.category && (
+                      <div className="px-3 pb-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {group.configs.map((config) => (
+                          <button
+                            key={config.id}
+                            onClick={() => {
+                              addHVACFromConfig(config);
+                              setShowQuickAdd(false);
+                            }}
+                            className="text-left p-2 text-xs bg-gray-50 hover:bg-blue-100 rounded border border-gray-200 hover:border-blue-300 transition-colors"
+                          >
+                            <div className="font-medium text-gray-900 truncate">{config.label}</div>
+                            <div className="text-gray-500 mt-0.5">
+                              {config.fuelType}
+                              {config.typicalSEER && ` • SEER ${config.typicalSEER}`}
+                              {config.typicalAFUE && ` • ${config.typicalAFUE}% AFUE`}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {hvacUnits.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-4">
-              No HVAC units added yet. Click Add Unit to start.
+              No HVAC units added yet. Use Quick Add or click Add Custom to start.
             </p>
           ) : (
             <div className="space-y-4">
@@ -220,6 +305,22 @@ export function EquipmentInventoryForm({
                       </select>
                     </div>
                     
+                    <Input
+                      label="Efficiency Rating"
+                      value={unit.efficiencyRating || ''}
+                      onChange={(e) => updateHVAC(unit.id, { efficiencyRating: e.target.value })}
+                      placeholder="e.g., SEER 14"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Input
+                      label="Serial Number"
+                      value={unit.serialNumber || ''}
+                      onChange={(e) => updateHVAC(unit.id, { serialNumber: e.target.value })}
+                      placeholder="Serial #"
+                    />
+                    
                     <div className="flex items-end">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -245,6 +346,39 @@ export function EquipmentInventoryForm({
           )}
         </CardContent>
       </Card>
+
+      {/* HVAC Summary */}
+      {hvacUnits.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <h3 className="font-medium text-blue-900 mb-2">HVAC Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-blue-700">Total Units:</span>
+                <span className="font-semibold text-blue-900 ml-2">{hvacUnits.length}</span>
+              </div>
+              <div>
+                <span className="text-blue-700">Total Cooling:</span>
+                <span className="font-semibold text-blue-900 ml-2">
+                  {hvacUnits.reduce((sum, u) => sum + (u.capacityUnit === 'tons' ? (u.capacity || 0) : 0), 0).toFixed(1)} tons
+                </span>
+              </div>
+              <div>
+                <span className="text-blue-700">Electric:</span>
+                <span className="font-semibold text-blue-900 ml-2">
+                  {hvacUnits.filter(u => u.fuelType === 'Electric').length}
+                </span>
+              </div>
+              <div>
+                <span className="text-blue-700">Gas:</span>
+                <span className="font-semibold text-blue-900 ml-2">
+                  {hvacUnits.filter(u => u.fuelType === 'Natural Gas').length}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Other Equipment Section */}
       <Card>

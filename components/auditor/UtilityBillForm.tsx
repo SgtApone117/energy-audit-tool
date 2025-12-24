@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, Button, Input } from '@/components/ui';
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { Card, CardContent, Button, Input, Alert, FileUpload } from '@/components/ui';
 import { 
   Plus, 
   Trash2,
@@ -10,9 +10,16 @@ import {
   TrendingUp,
   Calendar,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Upload,
+  Download,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { AuditUtilityBill, generateId } from '@/lib/auditor/types';
+import { parseAuditorUtilityBillCSV, generateAuditorCSVTemplate } from '@/lib/auditor/csv/billParser';
 
 interface UtilityBillFormProps {
   bills: AuditUtilityBill[];
@@ -28,8 +35,21 @@ const MONTHS = [
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
 
+type InputMode = 'manual' | 'csv';
+
+interface CSVUploadResult {
+  success: boolean;
+  billsCount: number;
+  errors: string[];
+  warnings: string[];
+}
+
 export function UtilityBillForm({ bills, squareFootage, onBillsChange }: UtilityBillFormProps) {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR - 1);
+  const [inputMode, setInputMode] = useState<InputMode>('manual');
+  const [csvResult, setCsvResult] = useState<CSVUploadResult | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get bill for a specific month/year
   const getBill = useCallback((month: string, year: number) => {
@@ -112,6 +132,75 @@ export function UtilityBillForm({ bills, squareFootage, onBillsChange }: Utility
     onBillsChange(bills.filter(b => b.year !== selectedYear));
   };
 
+  // Handle CSV file selection
+  const handleCSVUpload = useCallback(async (file: File) => {
+    setIsProcessing(true);
+    setCsvResult(null);
+
+    try {
+      const text = await file.text();
+      const result = parseAuditorUtilityBillCSV(text);
+
+      if (result.success) {
+        // Merge with existing bills (replace duplicates)
+        const existingBills = bills.filter(existing => 
+          !result.bills.some(newBill => 
+            newBill.month === existing.month && newBill.year === existing.year
+          )
+        );
+        onBillsChange([...existingBills, ...result.bills]);
+
+        // Set the year filter to show the imported data
+        if (result.bills.length > 0) {
+          const firstYear = result.bills[0].year;
+          if (YEARS.includes(firstYear)) {
+            setSelectedYear(firstYear);
+          }
+        }
+      }
+
+      setCsvResult({
+        success: result.success,
+        billsCount: result.bills.length,
+        errors: result.errors,
+        warnings: result.warnings,
+      });
+    } catch (error) {
+      setCsvResult({
+        success: false,
+        billsCount: 0,
+        errors: ['Failed to read CSV file. Please check the file format.'],
+        warnings: [],
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [bills, onBillsChange]);
+
+  // Download template
+  const handleDownloadTemplate = () => {
+    const template = generateAuditorCSVTemplate();
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'utility_bills_template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // File input change handler
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleCSVUpload(file);
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -123,20 +212,143 @@ export function UtilityBillForm({ bills, squareFootage, onBillsChange }: Utility
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            {YEARS.map(year => (
-              <option key={year} value={year}>{year}</option>
-            ))}
-          </select>
+          {/* Input Mode Toggle */}
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <button
+              onClick={() => setInputMode('manual')}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                inputMode === 'manual'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Manual
+            </button>
+            <button
+              onClick={() => setInputMode('csv')}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                inputMode === 'csv'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Upload className="w-4 h-4 inline mr-1" />
+              CSV Upload
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* CSV Upload Mode */}
+      {inputMode === 'csv' && (
+        <Card className="border-2 border-dashed border-blue-300 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <FileText className="w-8 h-8 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Upload Utility Bill CSV</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Upload a CSV file with your monthly utility data
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="csv-upload"
+                />
+                <label
+                  htmlFor="csv-upload"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {isProcessing ? 'Processing...' : 'Select CSV File'}
+                </label>
+                <Button variant="outline" onClick={handleDownloadTemplate}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Template
+                </Button>
+              </div>
+
+              <div className="text-xs text-gray-500 space-y-1">
+                <p><strong>Expected columns:</strong></p>
+                <p>month, year, electricity_kwh, electricity_cost, gas_therms, gas_cost</p>
+                <p className="italic">Or use a date column (e.g., 2024-01, January 2024)</p>
+              </div>
+            </div>
+
+            {/* CSV Result */}
+            {csvResult && (
+              <div className="mt-6">
+                {csvResult.success ? (
+                  <Alert variant="success">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-green-600" />
+                      <div>
+                        <div className="font-medium">Successfully imported {csvResult.billsCount} months of data</div>
+                        {csvResult.warnings.length > 0 && (
+                          <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside">
+                            {csvResult.warnings.map((w, i) => (
+                              <li key={i}>{w}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </Alert>
+                ) : (
+                  <Alert variant="error">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
+                      <div>
+                        <div className="font-medium">Failed to import CSV</div>
+                        <ul className="mt-2 text-sm list-disc list-inside">
+                          {csvResult.errors.map((e, i) => (
+                            <li key={i}>{e}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </Alert>
+                )}
+                <div className="flex justify-end mt-2">
+                  <button 
+                    onClick={() => setCsvResult(null)}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-4 h-4 inline mr-1" />
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Year Selector and Actions (for manual mode or always visible) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        >
+          {YEARS.map(year => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        {inputMode === 'manual' && (
           <Button variant="outline" onClick={handlePrefillYear}>
             <Calendar className="w-4 h-4 mr-2" />
             Prefill Months
           </Button>
-        </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -236,10 +448,17 @@ export function UtilityBillForm({ bills, squareFootage, onBillsChange }: Utility
               <tbody>
                 {MONTHS.map((month, idx) => {
                   const bill = getBill(month, selectedYear);
+                  const hasData = bill?.electricityKwh || bill?.electricityCost || bill?.gasTherm || bill?.gasCost;
                   return (
-                    <tr key={month} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <tr 
+                      key={month} 
+                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${hasData ? 'ring-1 ring-inset ring-blue-100' : ''}`}
+                    >
                       <td className="px-4 py-2 text-sm font-medium text-gray-900">
                         {month}
+                        {hasData && (
+                          <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full" title="Has data"></span>
+                        )}
                       </td>
                       <td className="px-2 py-2">
                         <Input
