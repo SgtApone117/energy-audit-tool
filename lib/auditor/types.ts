@@ -418,6 +418,9 @@ export interface AuditBuildingInfo {
   contactName?: string;
   contactPhone?: string;
   contactEmail?: string;
+  // Utility providers
+  electricityProviderId?: string;
+  gasProviderId?: string;
 }
 
 // Operating Schedule

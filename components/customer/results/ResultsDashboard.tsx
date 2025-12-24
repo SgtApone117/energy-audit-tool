@@ -7,6 +7,11 @@ import { Share2, RefreshCw, Home, Info } from 'lucide-react';
 import { useCalculations } from '@/lib/customer/hooks/useCalculations';
 import { CustomerAssessmentForm } from '@/lib/customer/types';
 import { prepareAISummaryInput } from '@/lib/ai/aiExecutiveSummary';
+import { 
+  getProviderById, 
+  getElectricityRateByProvider, 
+  getGasRateByProvider 
+} from '@/lib/core/data/utilityProviders';
 import { EnergyProfile } from './EnergyProfile';
 import { BenchmarkComparison } from './BenchmarkComparison';
 import { QuickWins } from './QuickWins';
@@ -21,6 +26,42 @@ interface ResultsDashboardProps {
 export function ResultsDashboard({ formData }: ResultsDashboardProps) {
   const { results, isReady } = useCalculations(formData);
   const [copied, setCopied] = useState(false);
+
+  // Get utility provider info for display
+  const utilityInfo = useMemo(() => {
+    if (!formData) return undefined;
+    
+    const info: {
+      electricProvider?: { name: string; rate: number; rateFormatted: string };
+      gasProvider?: { name: string; rate: number; rateFormatted: string };
+    } = {};
+
+    if (formData.electricityProviderId) {
+      const provider = getProviderById(formData.electricityProviderId);
+      if (provider) {
+        const rate = getElectricityRateByProvider(formData.electricityProviderId);
+        info.electricProvider = {
+          name: provider.name,
+          rate,
+          rateFormatted: `$${rate.toFixed(4)}/kWh`,
+        };
+      }
+    }
+
+    if (formData.gasProviderId && formData.gasProviderId !== 'none') {
+      const provider = getProviderById(formData.gasProviderId);
+      if (provider) {
+        const rate = getGasRateByProvider(formData.gasProviderId);
+        info.gasProvider = {
+          name: provider.name,
+          rate,
+          rateFormatted: `$${rate.toFixed(2)}/therm`,
+        };
+      }
+    }
+
+    return Object.keys(info).length > 0 ? info : undefined;
+  }, [formData]);
 
   // Loading state
   if (!formData) {
@@ -106,6 +147,7 @@ Potential Annual Savings: $${results.ecmRecommendations.reduce((sum, r) => sum +
         confidence={results.confidence}
         monthsOfData={monthsOfData}
         hasEquipmentData={results.hasEquipmentData}
+        utilityInfo={utilityInfo}
       />
 
       {/* Smart Summary */}

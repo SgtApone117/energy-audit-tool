@@ -1,28 +1,23 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, InfoTooltip } from '@/components/ui';
 import { 
   Fan, 
-  Lightbulb, 
   Thermometer, 
   Plus, 
   Trash2
 } from 'lucide-react';
 import { 
   AuditHVACUnit, 
-  AuditLightingZone, 
   AuditEquipment,
   generateId,
-  LampType,
-  BallastType
 } from '@/lib/auditor/types';
+import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
 
 interface EquipmentInventoryFormProps {
   hvacUnits: AuditHVACUnit[];
-  lightingZones: AuditLightingZone[];
   equipment: AuditEquipment[];
   onHVACChange: (units: AuditHVACUnit[]) => void;
-  onLightingChange: (zones: AuditLightingZone[]) => void;
   onEquipmentChange: (equipment: AuditEquipment[]) => void;
 }
 
@@ -37,29 +32,6 @@ const HVAC_TYPES = [
   'Boiler',
   'Chiller',
   'Other',
-];
-
-const LIGHTING_TYPES = [
-  'LED',
-  'Fluorescent T8',
-  'Fluorescent T12',
-  'Fluorescent T5',
-  'CFL',
-  'Incandescent',
-  'Halogen',
-  'Metal Halide',
-  'High Pressure Sodium',
-  'Other',
-];
-
-const CONTROL_TYPES = [
-  { id: 'Manual', label: 'Manual Switch' },
-  { id: 'Occupancy', label: 'Occupancy Sensor' },
-  { id: 'Daylight', label: 'Daylight Sensor' },
-  { id: 'Timer', label: 'Timer' },
-  { id: 'BMS', label: 'Building Management' },
-  { id: 'Dimmer', label: 'Dimmer' },
-  { id: 'None', label: 'Always On' },
 ];
 
 const EQUIPMENT_TYPES = [
@@ -83,10 +55,8 @@ const EQUIPMENT_TYPES = [
 
 export function EquipmentInventoryForm({
   hvacUnits,
-  lightingZones,
   equipment,
   onHVACChange,
-  onLightingChange,
   onEquipmentChange,
 }: EquipmentInventoryFormProps) {
   // HVAC handlers
@@ -109,37 +79,6 @@ export function EquipmentInventoryForm({
 
   const removeHVAC = (id: string) => {
     onHVACChange(hvacUnits.filter(u => u.id !== id));
-  };
-
-  // Lighting handlers
-  const addLighting = () => {
-    const newZone: AuditLightingZone = {
-      id: generateId(),
-      zoneName: '',
-      fixtureType: 'LED',
-      fixtureCount: 0,
-      lampsPerFixture: 1,
-      lampType: 'LED-Fixture',
-      ballastType: 'LED-Driver',
-      wattsPerLamp: 40,
-      ballastFactor: 1.0,
-      wattsPerFixture: 40,
-      totalConnectedWatts: 0,
-      lampsOutCount: 0,
-      fixturesWithLampsOut: 0,
-      controlType: 'Manual',
-      verified: false,
-      photoIds: [],
-    };
-    onLightingChange([...lightingZones, newZone]);
-  };
-
-  const updateLighting = (id: string, updates: Partial<AuditLightingZone>) => {
-    onLightingChange(lightingZones.map(z => z.id === id ? { ...z, ...updates } : z));
-  };
-
-  const removeLighting = (id: string) => {
-    onLightingChange(lightingZones.filter(z => z.id !== id));
   };
 
   // Equipment handlers
@@ -299,107 +238,6 @@ export function EquipmentInventoryForm({
                     value={unit.notes || ''}
                     onChange={(e) => updateHVAC(unit.id, { notes: e.target.value })}
                     placeholder="Any observations or issues..."
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Lighting Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Lightbulb className="w-5 h-5 text-yellow-600" />
-              Lighting ({lightingZones.length} zones)
-            </CardTitle>
-            <Button size="sm" onClick={addLighting}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Zone
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {lightingZones.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">
-              No lighting zones added yet. Click Add Zone to start.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {lightingZones.map((zone, index) => (
-                <div key={zone.id} className="p-4 bg-gray-50 rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-700">Zone #{index + 1}</span>
-                    <button
-                      onClick={() => removeLighting(zone.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <Input
-                      label="Zone Name"
-                      value={zone.zoneName}
-                      onChange={(e) => updateLighting(zone.id, { zoneName: e.target.value })}
-                      placeholder="e.g., Main Office"
-                    />
-                    
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Fixture Type</label>
-                      <select
-                        value={zone.fixtureType}
-                        onChange={(e) => updateLighting(zone.id, { fixtureType: e.target.value })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {LIGHTING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    
-                    <Input
-                      label="# Fixtures"
-                      type="number"
-                      value={zone.fixtureCount || ''}
-                      onChange={(e) => updateLighting(zone.id, { fixtureCount: parseInt(e.target.value) || 0 })}
-                      placeholder="0"
-                    />
-                    
-                    <Input
-                      label="Watts/Fixture"
-                      type="number"
-                      value={zone.wattsPerFixture || ''}
-                      onChange={(e) => updateLighting(zone.id, { wattsPerFixture: parseInt(e.target.value) || undefined })}
-                      placeholder="e.g., 32"
-                    />
-                    
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Control Type</label>
-                      <select
-                        value={zone.controlType}
-                        onChange={(e) => updateLighting(zone.id, { controlType: e.target.value as AuditLightingZone['controlType'] })}
-                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {CONTROL_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                      </select>
-                    </div>
-                    
-                    <Input
-                      label="Hours/Day"
-                      type="number"
-                      value={zone.hoursPerDay || ''}
-                      onChange={(e) => updateLighting(zone.id, { hoursPerDay: parseInt(e.target.value) || undefined })}
-                      placeholder="8"
-                    />
-                  </div>
-                  
-                  <Input
-                    label="Notes"
-                    value={zone.notes || ''}
-                    onChange={(e) => updateLighting(zone.id, { notes: e.target.value })}
-                    placeholder="Any observations..."
                   />
                 </div>
               ))}

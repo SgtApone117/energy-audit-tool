@@ -1,8 +1,21 @@
 'use client';
 
 import { Card, CardContent, ScoreBadge, Badge } from '@/components/ui';
-import { DollarSign, Zap, Building2, TrendingDown } from 'lucide-react';
+import { DollarSign, Zap, Building2, TrendingDown, Flame } from 'lucide-react';
 import { EnergyScore, ConfidenceLevel } from '@/lib/customer/types';
+
+interface UtilityProviderInfo {
+  electricProvider?: {
+    name: string;
+    rate: number;
+    rateFormatted: string;
+  };
+  gasProvider?: {
+    name: string;
+    rate: number;
+    rateFormatted: string;
+  };
+}
 
 interface EnergyProfileProps {
   annualCost: number;
@@ -12,6 +25,7 @@ interface EnergyProfileProps {
   confidence: ConfidenceLevel;
   monthsOfData: number;
   hasEquipmentData: boolean;
+  utilityInfo?: UtilityProviderInfo;
 }
 
 function formatCurrency(value: number): string {
@@ -34,6 +48,7 @@ export function EnergyProfile({
   confidence,
   monthsOfData,
   hasEquipmentData,
+  utilityInfo,
 }: EnergyProfileProps) {
   const confidenceConfig = {
     high: { dots: 3, label: 'High Confidence', color: 'text-green-600', bg: 'bg-green-100' },
@@ -143,6 +158,46 @@ export function EnergyProfile({
           </span>
         </div>
       </div>
+
+      {/* Utility Provider Info */}
+      {utilityInfo && (utilityInfo.electricProvider || utilityInfo.gasProvider) && (
+        <Card className="bg-gradient-to-r from-gray-50 to-white">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Utility Rate Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {utilityInfo.electricProvider && (
+                <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{utilityInfo.electricProvider.name}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Commercial Rate: <span className="font-medium">{utilityInfo.electricProvider.rateFormatted}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+              {utilityInfo.gasProvider && (
+                <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Flame className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{utilityInfo.gasProvider.name}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Commercial Rate: <span className="font-medium">{utilityInfo.gasProvider.rateFormatted}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              Rates shown are approximate commercial tariff rates. Actual rates may vary based on rate class and usage tier.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

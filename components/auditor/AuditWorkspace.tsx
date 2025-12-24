@@ -430,13 +430,11 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
           <>
             <EquipmentInventoryForm
               hvacUnits={audit.hvacUnits}
-              lightingZones={[]} 
               equipment={audit.equipment}
               onHVACChange={(hvacUnits) => {
                 handleUpdate({ hvacUnits });
                 updateStatus();
               }}
-              onLightingChange={() => {}}
               onEquipmentChange={(equipment) => {
                 handleUpdate({ equipment });
                 updateStatus();

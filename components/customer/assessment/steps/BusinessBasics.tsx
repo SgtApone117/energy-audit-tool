@@ -1,11 +1,19 @@
 'use client';
 
-import { Input, Select, InfoTooltip } from '@/components/ui';
-import { Building2 } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { Input, Select, InfoTooltip, Alert } from '@/components/ui';
+import { Building2, Zap, Flame, AlertTriangle } from 'lucide-react';
 import { CustomerAssessmentForm } from '@/lib/customer/types';
-import { getStateFromZip, getStateName } from '@/lib/core/data/zipToState';
+import { getStateFromZip } from '@/lib/core/data/zipToState';
 import { TOOLTIP_CONTENT } from '@/lib/core/data/tooltipContent';
-import { useEffect } from 'react';
+import {
+  NEW_ENGLAND_STATES,
+  isNewEnglandState,
+  getElectricProvidersByState,
+  getGasProvidersByState,
+  STATE_INFO,
+  NewEnglandState,
+} from '@/lib/core/data/utilityProviders';
 
 const BUSINESS_TYPES = [
   { value: 'Office', label: 'Office' },
@@ -32,9 +40,37 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
       const state = getStateFromZip(formData.zipCode);
       if (state && state !== formData.state) {
         onUpdate('state', state);
+        // Clear provider selections when state changes
+        onUpdate('electricityProviderId', '');
+        onUpdate('gasProviderId', '');
       }
     }
   }, [formData.zipCode, formData.state, onUpdate]);
+
+  // Check if state is in New England
+  const isValidState = useMemo(() => {
+    return formData.state ? isNewEnglandState(formData.state) : true;
+  }, [formData.state]);
+
+  // Get providers for the current state
+  const electricProviders = useMemo(() => {
+    if (!formData.state || !isNewEnglandState(formData.state)) return [];
+    return getElectricProvidersByState(formData.state as NewEnglandState);
+  }, [formData.state]);
+
+  const gasProviders = useMemo(() => {
+    if (!formData.state || !isNewEnglandState(formData.state)) return [];
+    return getGasProvidersByState(formData.state as NewEnglandState);
+  }, [formData.state]);
+
+  // Get state display name
+  const stateName = useMemo(() => {
+    if (!formData.state) return 'Auto-detected from ZIP';
+    if (isNewEnglandState(formData.state)) {
+      return STATE_INFO[formData.state as NewEnglandState].name;
+    }
+    return formData.state;
+  }, [formData.state]);
 
   return (
     <div className="space-y-6">
@@ -79,6 +115,7 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
               onChange={(e) => onUpdate('address', e.target.value)}
               error={errors.address}
               required
+              tooltip={<InfoTooltip content={TOOLTIP_CONTENT.businessBasics.address} />}
             />
           </div>
         </div>
@@ -106,14 +143,36 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                value={formData.state ? getStateName(formData.state) : 'Auto-detected from ZIP'}
+                className={`w-full px-3 py-2 border rounded-lg text-gray-700 ${
+                  !isValidState 
+                    ? 'border-red-300 bg-red-50' 
+                    : 'border-gray-300 bg-gray-50'
+                }`}
+                value={stateName}
                 disabled
               />
-              <p className="mt-1 text-xs text-gray-500">Automatically detected from ZIP code</p>
+              <p className="mt-1 text-xs text-gray-500">
+                We currently serve CT, MA, and NH
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Warning for non-New England states */}
+        {formData.state && !isValidState && (
+          <Alert variant="warning">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-medium">Service Area Limitation</div>
+                <p className="text-sm mt-1">
+                  We currently only support businesses in New England (Connecticut, Massachusetts, and New Hampshire).
+                  Please enter a ZIP code from one of these states.
+                </p>
+              </div>
+            </div>
+          </Alert>
+        )}
 
         <Input
           label="Building Square Footage"
@@ -132,13 +191,72 @@ export function BusinessBasics({ formData, errors, onUpdate }: BusinessBasicsPro
         />
       </div>
 
+      {/* Utility Provider Selection */}
+      {isValidState && formData.state && (
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-medium text-gray-900">Utility Providers</h3>
+            <InfoTooltip content="Select your utility providers to get accurate tariff rates for cost calculations." />
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Select your electricity and gas providers for accurate rate calculations.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Electric Provider */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <Zap className="w-4 h-4 text-yellow-500" />
+                Electricity Provider
+                <InfoTooltip content={TOOLTIP_CONTENT.businessBasics.electricProvider} />
+              </label>
+              <select
+                value={formData.electricityProviderId}
+                onChange={(e) => onUpdate('electricityProviderId', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select provider...</option>
+                {electricProviders.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Gas Provider */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <Flame className="w-4 h-4 text-orange-500" />
+                Natural Gas Provider
+                <InfoTooltip content={TOOLTIP_CONTENT.businessBasics.gasProvider} />
+              </label>
+              <select
+                value={formData.gasProviderId}
+                onChange={(e) => onUpdate('gasProviderId', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select provider...</option>
+                <option value="none">No natural gas service</option>
+                {gasProviders.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Why we need this section */}
       <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
         <h3 className="text-sm font-medium text-blue-900 mb-2">Why do we need this information?</h3>
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
           <li>Business type helps us compare you to similar businesses</li>
-          <li>Location determines your climate zone and local utility rates</li>
+          <li>Location determines your climate zone and available utility providers</li>
           <li>Square footage is used to calculate your energy use intensity (EUI)</li>
+          <li>Utility providers determine the tariff rates for accurate cost calculations</li>
         </ul>
       </div>
     </div>

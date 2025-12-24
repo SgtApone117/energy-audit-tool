@@ -7,6 +7,11 @@ import {
   AuditECM 
 } from '@/lib/auditor/types';
 import { generateECMRecommendations, calculateTotalSavings } from '@/lib/auditor/ecmGenerator';
+import { 
+  getProviderById, 
+  getElectricityRateByProvider, 
+  getGasRateByProvider 
+} from '@/lib/core/data/utilityProviders';
 
 interface AuditReportPrintProps {
   audit: AuditData;
@@ -45,6 +50,40 @@ export function AuditReportPrint({ audit }: AuditReportPrintProps) {
       total: findings.length,
     };
   }, [audit.findings]);
+
+  // Utility provider info
+  const utilityProviderInfo = useMemo(() => {
+    const info: {
+      electricProvider?: { name: string; rate: number; rateFormatted: string };
+      gasProvider?: { name: string; rate: number; rateFormatted: string };
+    } = {};
+
+    if (audit.buildingInfo.electricityProviderId) {
+      const provider = getProviderById(audit.buildingInfo.electricityProviderId);
+      if (provider) {
+        const rate = getElectricityRateByProvider(audit.buildingInfo.electricityProviderId);
+        info.electricProvider = {
+          name: provider.name,
+          rate,
+          rateFormatted: `$${rate.toFixed(4)}/kWh`,
+        };
+      }
+    }
+
+    if (audit.buildingInfo.gasProviderId && audit.buildingInfo.gasProviderId !== 'none') {
+      const provider = getProviderById(audit.buildingInfo.gasProviderId);
+      if (provider) {
+        const rate = getGasRateByProvider(audit.buildingInfo.gasProviderId);
+        info.gasProvider = {
+          name: provider.name,
+          rate,
+          rateFormatted: `$${rate.toFixed(2)}/therm`,
+        };
+      }
+    }
+
+    return info;
+  }, [audit.buildingInfo.electricityProviderId, audit.buildingInfo.gasProviderId]);
 
   // Lighting inventory stats (Eversource format)
   const lightingStats = useMemo(() => {
@@ -145,6 +184,28 @@ export function AuditReportPrint({ audit }: AuditReportPrintProps) {
           {audit.inspectorName && <p><strong>Inspector:</strong> {audit.inspectorName}</p>}
           {audit.auditorName && <p><strong>Auditor:</strong> {audit.auditorName}</p>}
         </div>
+
+        {/* Utility Provider Information */}
+        {(utilityProviderInfo.electricProvider || utilityProviderInfo.gasProvider) && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-left max-w-md mx-auto">
+            <h3 className="font-semibold text-gray-900 mb-2">Utility Rate Information</h3>
+            {utilityProviderInfo.electricProvider && (
+              <p className="text-sm">
+                <strong>Electric:</strong> {utilityProviderInfo.electricProvider.name}
+                <span className="text-gray-600 ml-2">({utilityProviderInfo.electricProvider.rateFormatted})</span>
+              </p>
+            )}
+            {utilityProviderInfo.gasProvider && (
+              <p className="text-sm">
+                <strong>Natural Gas:</strong> {utilityProviderInfo.gasProvider.name}
+                <span className="text-gray-600 ml-2">({utilityProviderInfo.gasProvider.rateFormatted})</span>
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-2 italic">
+              Rates shown are approximate commercial tariff rates.
+            </p>
+          </div>
+        )}
 
         {/* Contractor Submittal Reference */}
         {audit.contractorSubmittal && (

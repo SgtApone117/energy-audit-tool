@@ -10,8 +10,8 @@ export interface CustomerAssessmentForm {
   squareFootage: number | null;
 
   // Step 2: Utility Bills
-  electricityProvider: string;
-  gasProvider: string;
+  electricityProviderId: string; // Provider ID from utilityProviders.ts
+  gasProviderId: string; // Provider ID from utilityProviders.ts
   utilityBills: UtilityBill[];
 
   // Step 3: Equipment (Optional)
@@ -289,8 +289,8 @@ export function createEmptyAssessmentForm(): CustomerAssessmentForm {
     state: '',
     zipCode: '',
     squareFootage: null,
-    electricityProvider: '',
-    gasProvider: '',
+    electricityProviderId: '',
+    gasProviderId: '',
     utilityBills: createEmptyUtilityBills(),
     hvacSystems: [],
     lightingDetails: null,
