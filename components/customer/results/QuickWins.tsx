@@ -85,3 +85,5 @@ export function QuickWins({ quickWins, totalAnnualCost }: QuickWinsProps) {
     </Card>
   );
 }
+
+

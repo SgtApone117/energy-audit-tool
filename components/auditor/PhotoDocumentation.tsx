@@ -553,3 +553,5 @@ function PhotoListItem({ photo, isEditing, onEdit, onSave, onUpdate, onDelete, r
     </Card>
   );
 }
+
+

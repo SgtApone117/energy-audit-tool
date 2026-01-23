@@ -682,3 +682,5 @@ export function EquipmentInventory({
     </div>
   );
 }
+
+

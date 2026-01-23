@@ -509,3 +509,5 @@ export function FindingsLogger({ findings, photos, onFindingsChange }: FindingsL
     </div>
   );
 }
+
+

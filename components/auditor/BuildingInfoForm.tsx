@@ -364,3 +364,5 @@ export function BuildingInfoForm({ buildingInfo, onChange }: BuildingInfoFormPro
     </div>
   );
 }
+
+
