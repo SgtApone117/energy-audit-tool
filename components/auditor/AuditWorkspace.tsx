@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Alert, Card, CardContent } from '@/components/ui';
 import {
@@ -20,7 +20,7 @@ import {
   Lightbulb,
   RotateCcw
 } from 'lucide-react';
-import { AuditData, AuditFinding, PHOTO_CATEGORIES, InspectionDiscrepancy } from '@/lib/auditor/types';
+import { AuditData, PHOTO_CATEGORIES, WorkflowType } from '@/lib/auditor/types';
 import { generateECMRecommendations, calculateTotalSavings } from '@/lib/auditor/ecmGenerator';
 import { BuildingInfoForm } from './BuildingInfoForm';
 import { PhotoDocumentation } from './PhotoDocumentation';
@@ -56,7 +56,10 @@ const TABS: Tab[] = [
   { id: 'report', label: 'Report', icon: FileText },
 ];
 
-const TAB_ORDER: TabId[] = ['building', 'photos', 'lighting', 'equipment', 'submittal', 'utilities', 'findings', 'report'];
+const WORKFLOW_TAB_ORDER: Record<WorkflowType, TabId[]> = {
+  audit: ['building', 'photos', 'lighting', 'equipment', 'utilities', 'findings', 'report'],
+  inspection: ['building', 'photos', 'lighting', 'equipment', 'submittal', 'findings', 'report'],
+};
 
 const TAB_LABELS: Record<TabId, string> = {
   building: 'Building Info',
@@ -74,6 +77,15 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
   const [activeTab, setActiveTab] = useState<TabId>('building');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const workflowType = audit.workflowType || 'inspection';
+  const tabOrder = WORKFLOW_TAB_ORDER[workflowType];
+  const tabs = TABS.filter(tab => tabOrder.includes(tab.id));
+
+  useEffect(() => {
+    if (!tabOrder.includes(activeTab)) {
+      setActiveTab(tabOrder[0]);
+    }
+  }, [activeTab, tabOrder]);
 
   // Auto-save with debounce
   const handleUpdate = useCallback((updates: Partial<AuditData>) => {
@@ -205,9 +217,9 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
 
   // Check if a specific tab is accessible (all previous tabs complete)
   const canAccessTab = (tabId: TabId): boolean => {
-    const tabIndex = TAB_ORDER.indexOf(tabId);
+    const tabIndex = tabOrder.indexOf(tabId);
     for (let i = 0; i < tabIndex; i++) {
-      const prevTab = TAB_ORDER[i];
+      const prevTab = tabOrder[i];
       // Building is required, others have their own rules
       if (prevTab === 'building' && getTabStatus('building') !== 'complete') {
         return false;
@@ -298,12 +310,12 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
         {/* Tab Navigation */}
         <div className="container mx-auto px-4 overflow-x-auto">
           <nav className="flex gap-1 -mb-px">
-            {TABS.map((tab) => {
+            {tabs.map((tab) => {
               const status = getTabStatus(tab.id);
               const Icon = tab.icon;
               const isAccessible = canAccessTab(tab.id);
-              const currentIndex = TAB_ORDER.indexOf(activeTab);
-              const tabIndex = TAB_ORDER.indexOf(tab.id);
+              const currentIndex = tabOrder.indexOf(activeTab);
+              const tabIndex = tabOrder.indexOf(tab.id);
               const isPreviousTab = tabIndex < currentIndex;
               
               return (
@@ -355,6 +367,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="building"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('building').canProceed}
               validationMessage={canProceedFromTab('building').message}
             />
@@ -401,6 +414,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="photos"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('photos').canProceed}
               validationMessage={canProceedFromTab('photos').message}
             />
@@ -420,6 +434,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="lighting"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('lighting').canProceed}
               validationMessage={canProceedFromTab('lighting').message}
             />
@@ -443,6 +458,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="equipment"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('equipment').canProceed}
               validationMessage={canProceedFromTab('equipment').message}
             />
@@ -472,6 +488,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="submittal"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('submittal').canProceed}
               validationMessage={canProceedFromTab('submittal').message}
             />
@@ -481,6 +498,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
         {activeTab === 'utilities' && (
           <>
             <UtilityBillForm
+              audit={audit}
               bills={audit.utilityBills}
               squareFootage={audit.buildingInfo.squareFootage || 0}
               onBillsChange={(utilityBills) => {
@@ -491,6 +509,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="utilities"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('utilities').canProceed}
               validationMessage={canProceedFromTab('utilities').message}
             />
@@ -510,6 +529,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
             <TabNavigation 
               currentTab="findings"
               onNavigate={setActiveTab}
+              tabOrder={tabOrder}
               canProceed={canProceedFromTab('findings').canProceed}
               validationMessage={canProceedFromTab('findings').message}
             />
@@ -568,6 +588,7 @@ export function AuditWorkspace({ audit, onSave, onReset }: AuditWorkspaceProps) 
 interface TabNavigationProps {
   currentTab: TabId;
   onNavigate: (tab: TabId) => void;
+  tabOrder: TabId[];
   canProceed: boolean;
   validationMessage: string;
 }
@@ -575,12 +596,13 @@ interface TabNavigationProps {
 function TabNavigation({ 
   currentTab, 
   onNavigate,
+  tabOrder,
   canProceed,
   validationMessage,
 }: TabNavigationProps) {
-  const currentIndex = TAB_ORDER.indexOf(currentTab);
-  const prevTab = currentIndex > 0 ? TAB_ORDER[currentIndex - 1] : null;
-  const nextTab = currentIndex < TAB_ORDER.length - 1 ? TAB_ORDER[currentIndex + 1] : null;
+  const currentIndex = tabOrder.indexOf(currentTab);
+  const prevTab = currentIndex > 0 ? tabOrder[currentIndex - 1] : null;
+  const nextTab = currentIndex < tabOrder.length - 1 ? tabOrder[currentIndex + 1] : null;
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-200">
@@ -604,7 +626,7 @@ function TabNavigation({
           )}
         </div>
         <div className="text-sm text-gray-500">
-          Step {currentIndex + 1} of {TAB_ORDER.length}
+          Step {currentIndex + 1} of {tabOrder.length}
         </div>
         <div>
           {nextTab && (
@@ -635,6 +657,9 @@ function ReportTab({ audit, onNotesChange, onAuditorChange }: ReportTabProps) {
     audit.buildingInfo.name && 
     audit.buildingInfo.businessType && 
     audit.buildingInfo.squareFootage > 0;
+  const reportLabel = audit.workflowType === 'inspection'
+    ? `${audit.inspectionType === 'post' ? 'Post' : 'Pre'}-Installation Inspection Report`
+    : 'Energy Audit Report';
 
   // Calculate utility stats
   const utilityStats = useMemo(() => {
@@ -696,7 +721,7 @@ function ReportTab({ audit, onNotesChange, onAuditorChange }: ReportTabProps) {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-blue-200 text-sm mb-1">Energy Audit Report</p>
+            <p className="text-blue-200 text-sm mb-1">{reportLabel}</p>
             <h1 className="text-2xl font-bold mb-2">{audit.name}</h1>
             <p className="text-blue-100">
               {audit.buildingInfo.address && `${audit.buildingInfo.address}, `}

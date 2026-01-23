@@ -19,7 +19,7 @@ import {
   ArrowRightCircle
 } from 'lucide-react';
 import { useAuditStorage } from '@/lib/auditor';
-import { AuditData, InspectionType, INSPECTION_TYPES } from '@/lib/auditor/types';
+import { AuditData, InspectionType, INSPECTION_TYPES, WorkflowType, WORKFLOW_TYPES } from '@/lib/auditor/types';
 
 export default function AuditorDashboard() {
   const router = useRouter();
@@ -38,6 +38,7 @@ export default function AuditorDashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showNewAuditModal, setShowNewAuditModal] = useState(false);
   const [newAuditName, setNewAuditName] = useState('');
+  const [newWorkflowType, setNewWorkflowType] = useState<WorkflowType>('audit');
   const [newAuditType, setNewAuditType] = useState<InspectionType>('pre');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,13 +63,18 @@ export default function AuditorDashboard() {
 
   const handleNewAudit = () => {
     setNewAuditName('');
+    setNewWorkflowType('audit');
     setNewAuditType('pre');
     setShowNewAuditModal(true);
   };
 
   const handleCreateAudit = () => {
     const name = newAuditName.trim() || undefined;
-    const audit = createAudit(name, newAuditType);
+    const audit = createAudit(
+      name,
+      newWorkflowType,
+      newWorkflowType === 'inspection' ? newAuditType : 'pre'
+    );
     setShowNewAuditModal(false);
     router.push(`/auditor/${audit.id}`);
   };
@@ -152,8 +158,8 @@ export default function AuditorDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Energy Audits</h1>
-          <p className="text-gray-600 mt-1">Manage your on-site energy audits</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Audits & Inspections</h1>
+          <p className="text-gray-600 mt-1">Manage first-time audits and follow-up inspections</p>
         </div>
         <div className="flex gap-3">
           <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
@@ -168,7 +174,7 @@ export default function AuditorDashboard() {
           </label>
           <Button onClick={handleNewAudit}>
             <Plus className="w-4 h-4 mr-2" />
-            New Audit
+            New Workflow
           </Button>
         </div>
       </div>
@@ -179,10 +185,10 @@ export default function AuditorDashboard() {
           <CardContent className="py-12 text-center">
             <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No audits yet</h3>
-            <p className="text-gray-600 mb-4">Start your first on-site energy audit</p>
+            <p className="text-gray-600 mb-4">Start your first on-site energy workflow</p>
             <Button onClick={handleNewAudit}>
               <Plus className="w-4 h-4 mr-2" />
-              Create New Audit
+              Create New Workflow
             </Button>
           </CardContent>
         </Card>
@@ -204,14 +210,23 @@ export default function AuditorDashboard() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-4">
-                  {/* Inspection Type Badge */}
+                  {/* Workflow Badge */}
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                    audit.inspectionType === 'post' 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-amber-100 text-amber-700'
+                    audit.workflowType === 'audit'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-emerald-100 text-emerald-700'
                   }`}>
-                    {audit.inspectionType === 'post' ? '✅ Post' : '📋 Pre'}
+                    {audit.workflowType === 'audit' ? '🧾 Audit' : '🔎 Inspection'}
                   </span>
+                  {audit.workflowType === 'inspection' && (
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      audit.inspectionType === 'post' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {audit.inspectionType === 'post' ? '✅ Post' : '📋 Pre'}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1">
                     <FileText className="w-4 h-4" />
                     {audit.photos.length} photos
@@ -231,7 +246,7 @@ export default function AuditorDashboard() {
                   </Button>
                   
                   {/* Create Post-Install button - only for COMPLETED pre-installation audits */}
-                  {audit.inspectionType === 'pre' && audit.status === 'completed' && (
+                  {audit.workflowType === 'inspection' && audit.inspectionType === 'pre' && audit.status === 'completed' && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -301,13 +316,13 @@ export default function AuditorDashboard() {
 
       {/* Quick Links */}
       <div className="mt-12 p-6 bg-blue-50 rounded-lg border border-blue-200">
-        <h3 className="font-semibold text-blue-900 mb-2">Quick Start Guide</h3>
+          <h3 className="font-semibold text-blue-900 mb-2">Quick Start Guide</h3>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>1. Create a new audit and enter building information</li>
+          <li>1. Create a new workflow and enter building information</li>
           <li>2. Take photos during your on-site visit and categorize them</li>
           <li>3. Document equipment: HVAC units, lighting, and other systems</li>
-          <li>4. Enter utility bill data if available</li>
-          <li>5. Generate a professional audit report</li>
+          <li>4. Enter utility bill data if available (audits)</li>
+          <li>5. Generate a professional report for the client</li>
         </ul>
       </div>
 
@@ -316,7 +331,7 @@ export default function AuditorDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">New Inspection</h2>
+              <h2 className="text-lg font-semibold text-gray-900">New Workflow</h2>
               <button
                 onClick={() => setShowNewAuditModal(false)}
                 className="p-1 hover:bg-gray-100 rounded"
@@ -326,40 +341,72 @@ export default function AuditorDashboard() {
             </div>
             
             <div className="p-4 space-y-6">
-              {/* Inspection Type Selection */}
+              {/* Workflow Type Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Inspection Type
+                  Workflow Type
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {INSPECTION_TYPES.map((type) => (
+                  {WORKFLOW_TYPES.map((type) => (
                     <button
                       key={type.id}
                       type="button"
-                      onClick={() => setNewAuditType(type.id)}
+                      onClick={() => setNewWorkflowType(type.id)}
                       className={`
                         p-4 rounded-lg border-2 text-left transition-all
-                        ${newAuditType === type.id
+                        ${newWorkflowType === type.id
                           ? 'border-blue-600 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                         }
                       `}
                     >
-                      <div className={`font-medium ${newAuditType === type.id ? 'text-blue-900' : 'text-gray-900'}`}>
-                        {type.id === 'pre' ? '📋 Pre-Installation' : '✅ Post-Installation'}
+                      <div className={`font-medium ${newWorkflowType === type.id ? 'text-blue-900' : 'text-gray-900'}`}>
+                        {type.id === 'audit' ? '🧾 Energy Audit' : '🔎 Inspection'}
                       </div>
-                      <p className={`text-xs mt-1 ${newAuditType === type.id ? 'text-blue-700' : 'text-gray-500'}`}>
+                      <p className={`text-xs mt-1 ${newWorkflowType === type.id ? 'text-blue-700' : 'text-gray-500'}`}>
                         {type.description}
                       </p>
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Inspection Type Selection */}
+              {newWorkflowType === 'inspection' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Inspection Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {INSPECTION_TYPES.map((type) => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => setNewAuditType(type.id)}
+                        className={`
+                          p-4 rounded-lg border-2 text-left transition-all
+                          ${newAuditType === type.id
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }
+                        `}
+                      >
+                        <div className={`font-medium ${newAuditType === type.id ? 'text-blue-900' : 'text-gray-900'}`}>
+                          {type.id === 'pre' ? '📋 Pre-Installation' : '✅ Post-Installation'}
+                        </div>
+                        <p className={`text-xs mt-1 ${newAuditType === type.id ? 'text-blue-700' : 'text-gray-500'}`}>
+                          {type.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Audit Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Inspection Name (Optional)
+                  Workflow Name (Optional)
                 </label>
                 <Input
                   ref={nameInputRef}
@@ -371,17 +418,48 @@ export default function AuditorDashboard() {
                   }}
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  A descriptive name helps identify this inspection later.
+                  A descriptive name helps identify this workflow later.
                 </p>
               </div>
               
               {/* Context Info */}
-              <div className={`p-3 rounded-lg ${newAuditType === 'pre' ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'}`}>
-                <h4 className={`text-sm font-medium ${newAuditType === 'pre' ? 'text-amber-900' : 'text-green-900'}`}>
-                  {newAuditType === 'pre' ? 'Pre-Installation Checklist:' : 'Post-Installation Checklist:'}
+              <div className={`p-3 rounded-lg ${
+                newWorkflowType === 'audit' 
+                  ? 'bg-blue-50 border border-blue-200' 
+                  : newAuditType === 'pre' 
+                    ? 'bg-amber-50 border border-amber-200' 
+                    : 'bg-green-50 border border-green-200'
+              }`}>
+                <h4 className={`text-sm font-medium ${
+                  newWorkflowType === 'audit' 
+                    ? 'text-blue-900' 
+                    : newAuditType === 'pre' 
+                      ? 'text-amber-900' 
+                      : 'text-green-900'
+                }`}>
+                  {newWorkflowType === 'audit'
+                    ? 'Audit Checklist:'
+                    : newAuditType === 'pre'
+                      ? 'Pre-Installation Checklist:'
+                      : 'Post-Installation Checklist:'
+                  }
                 </h4>
-                <ul className={`text-xs mt-2 space-y-1 ${newAuditType === 'pre' ? 'text-amber-800' : 'text-green-800'}`}>
-                  {newAuditType === 'pre' ? (
+                <ul className={`text-xs mt-2 space-y-1 ${
+                  newWorkflowType === 'audit' 
+                    ? 'text-blue-800' 
+                    : newAuditType === 'pre' 
+                      ? 'text-amber-800' 
+                      : 'text-green-800'
+                }`}>
+                  {newWorkflowType === 'audit' ? (
+                    <>
+                      <li>• Document building info, equipment, and lighting inventory</li>
+                      <li>• Capture photos of major systems and issues found</li>
+                      <li>• Enter utility bills for baseline usage</li>
+                      <li>• Record findings and recommendations</li>
+                      <li>• Generate a client-ready audit report</li>
+                    </>
+                  ) : newAuditType === 'pre' ? (
                     <>
                       <li>• Count existing fixtures and verify specifications</li>
                       <li>• Document lamp types, wattages, and ballast types</li>
@@ -408,7 +486,10 @@ export default function AuditorDashboard() {
               </Button>
               <Button onClick={handleCreateAudit}>
                 <Plus className="w-4 h-4 mr-2" />
-                Start {newAuditType === 'pre' ? 'Pre' : 'Post'}-Inspection
+                {newWorkflowType === 'audit'
+                  ? 'Start Audit'
+                  : `Start ${newAuditType === 'pre' ? 'Pre' : 'Post'}-Inspection`
+                }
               </Button>
             </div>
           </div>

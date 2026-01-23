@@ -9,9 +9,16 @@
 
 export type InspectionType = 'pre' | 'post';
 
+export type WorkflowType = 'audit' | 'inspection';
+
 export const INSPECTION_TYPES: { id: InspectionType; label: string; description: string }[] = [
   { id: 'pre', label: 'Pre-Installation Inspection', description: 'Document existing conditions before upgrades' },
   { id: 'post', label: 'Post-Installation Inspection', description: 'Verify installed equipment matches proposal' },
+];
+
+export const WORKFLOW_TYPES: { id: WorkflowType; label: string; description: string }[] = [
+  { id: 'audit', label: 'Energy Audit', description: 'First-time onsite audit for baseline energy usage' },
+  { id: 'inspection', label: 'Inspection', description: 'Follow-up verification of installed measures' },
 ];
 
 // ============================================
@@ -880,6 +887,9 @@ export interface AuditData {
   createdAt: string;
   updatedAt: string;
   
+  // Workflow Type (Audit vs Inspection)
+  workflowType: WorkflowType;
+
   // Inspection Type (Eversource requirement)
   inspectionType: InspectionType;
   
@@ -925,16 +935,24 @@ export interface AuditData {
 }
 
 // Factory function to create empty audit
-export function createEmptyAudit(name?: string, inspectionType: InspectionType = 'pre'): AuditData {
+export function createEmptyAudit(
+  name?: string,
+  workflowType: WorkflowType = 'audit',
+  inspectionType: InspectionType = 'pre'
+): AuditData {
   const now = new Date();
   const typeLabel = inspectionType === 'pre' ? 'Pre-Installation' : 'Post-Installation';
-  const defaultName = name || `${typeLabel} Inspection ${now.toLocaleDateString()}`;
+  const defaultName = name || (workflowType === 'audit'
+    ? `Energy Audit ${now.toLocaleDateString()}`
+    : `${typeLabel} Inspection ${now.toLocaleDateString()}`
+  );
   return {
     id: generateId(),
     name: defaultName,
     status: 'draft',
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
+    workflowType,
     inspectionType,
     buildingInfo: {
       name: '',

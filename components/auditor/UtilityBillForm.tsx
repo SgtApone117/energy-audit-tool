@@ -18,10 +18,13 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
-import { AuditUtilityBill, generateId } from '@/lib/auditor/types';
+import { AuditData, AuditUtilityBill } from '@/lib/auditor/types';
 import { parseAuditorUtilityBillCSV, generateAuditorCSVTemplate } from '@/lib/auditor/csv/billParser';
+import { generateUtilityProgramExport } from '@/lib/auditor/exports/utilityProgramExport';
+import { downloadCSV } from '@/lib/core/utility/csvParser';
 
 interface UtilityBillFormProps {
+  audit: AuditData;
   bills: AuditUtilityBill[];
   squareFootage: number;
   onBillsChange: (bills: AuditUtilityBill[]) => void;
@@ -44,7 +47,7 @@ interface CSVUploadResult {
   warnings: string[];
 }
 
-export function UtilityBillForm({ bills, squareFootage, onBillsChange }: UtilityBillFormProps) {
+export function UtilityBillForm({ audit, bills, squareFootage, onBillsChange }: UtilityBillFormProps) {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR - 1);
   const [inputMode, setInputMode] = useState<InputMode>('manual');
   const [csvResult, setCsvResult] = useState<CSVUploadResult | null>(null);
@@ -187,6 +190,13 @@ export function UtilityBillForm({ bills, squareFootage, onBillsChange }: Utility
     a.download = 'utility_bills_template.csv';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleProgramExport = (format: 'eversource' | 'national-grid') => {
+    const csv = generateUtilityProgramExport(audit, format);
+    const prefix = format === 'eversource' ? 'eversource' : 'national-grid';
+    const safeName = (audit.name || 'audit').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    downloadCSV(csv, `${safeName}-${prefix}-utility-export.csv`);
   };
 
   // File input change handler
@@ -546,7 +556,17 @@ export function UtilityBillForm({ bills, squareFootage, onBillsChange }: Utility
       )}
 
       {/* Actions */}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleProgramExport.bind(null, 'eversource')}>
+            <Download className="w-4 h-4 mr-2" />
+            Export Eversource
+          </Button>
+          <Button variant="outline" onClick={handleProgramExport.bind(null, 'national-grid')}>
+            <Download className="w-4 h-4 mr-2" />
+            Export National Grid
+          </Button>
+        </div>
         <Button variant="outline" onClick={handleClearYear} className="text-red-600 hover:bg-red-50">
           <Trash2 className="w-4 h-4 mr-2" />
           Clear {selectedYear} Data

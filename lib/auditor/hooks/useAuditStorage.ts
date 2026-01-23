@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AuditData, createEmptyAudit, InspectionType } from '../types';
+import { AuditData, createEmptyAudit, InspectionType, WorkflowType } from '../types';
 
 const STORAGE_KEY = 'energy-auditor-audits';
 
@@ -20,19 +20,32 @@ export function useAuditStorage() {
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const normalizeAudit = useCallback((audit: AuditData): AuditData => {
+    const workflowType = audit.workflowType || 'inspection';
+    return {
+      ...audit,
+      workflowType,
+      inspectionType: audit.inspectionType || 'pre',
+      updatedAt: audit.updatedAt || new Date().toISOString(),
+    };
+  }, []);
+
   // Load from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as AuditStorageState;
-        setState(parsed);
+        setState({
+          ...parsed,
+          audits: (parsed.audits || []).map(normalizeAudit),
+        });
       }
     } catch (error) {
       console.error('Failed to load audits from storage:', error);
     }
     setIsLoaded(true);
-  }, []);
+  }, [normalizeAudit]);
 
   // Save to localStorage whenever state changes
   useEffect(() => {
@@ -46,8 +59,12 @@ export function useAuditStorage() {
   }, [state, isLoaded]);
 
   // Create new audit
-  const createAudit = useCallback((name?: string, inspectionType: InspectionType = 'pre'): AuditData => {
-    const newAudit = createEmptyAudit(name, inspectionType);
+  const createAudit = useCallback((
+    name?: string,
+    workflowType: WorkflowType = 'audit',
+    inspectionType: InspectionType = 'pre'
+  ): AuditData => {
+    const newAudit = createEmptyAudit(name, workflowType, inspectionType);
     setState(prev => ({
       audits: [...prev.audits, newAudit],
       currentAuditId: newAudit.id,
@@ -137,7 +154,8 @@ export function useAuditStorage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       
-      // Change to post-installation type
+      // Change to post-installation inspection
+      workflowType: 'inspection',
       inspectionType: 'post',
       
       // Keep building info (same building!)
@@ -199,28 +217,29 @@ export function useAuditStorage() {
   const importAudit = useCallback((jsonString: string): AuditData | null => {
     try {
       const audit = JSON.parse(jsonString) as AuditData;
+      const normalized = normalizeAudit(audit);
       // Generate new ID to avoid conflicts
-      audit.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      audit.updatedAt = new Date().toISOString();
+      normalized.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      normalized.updatedAt = new Date().toISOString();
 
       setState(prev => ({
-        audits: [...prev.audits, audit],
-        currentAuditId: audit.id,
+        audits: [...prev.audits, normalized],
+        currentAuditId: normalized.id,
       }));
 
-      return audit;
+      return normalized;
     } catch (error) {
       console.error('Failed to import audit:', error);
       return null;
     }
-  }, []);
+  }, [normalizeAudit]);
 
   // Reset audit to empty state while keeping ID and name
   const resetAudit = useCallback((id: string): boolean => {
     const original = getAudit(id);
     if (!original) return false;
 
-    const emptyAudit = createEmptyAudit(original.name, original.inspectionType);
+    const emptyAudit = createEmptyAudit(original.name, original.workflowType, original.inspectionType);
     const resetAuditData: AuditData = {
       ...emptyAudit,
       id: original.id,
