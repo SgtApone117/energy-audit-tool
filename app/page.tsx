@@ -1,221 +1,213 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import type { FormData } from "@/lib/types";
-import { UtilityBillData, createEmptyUtilityData } from "@/lib/utility/types";
-import { OperatingScheduleData, createEmptyScheduleData } from "@/lib/schedule/types";
-import { EquipmentInventory, createEmptyEquipmentInventory } from "@/lib/equipment/types";
-import {
-  calculateAnnualEnergyUseWithAdjustments,
-  calculateAnnualEnergyCost,
-  calculateEnhancedEndUseBreakdown,
-  calculateECMs,
-  EnergyCalculationResult,
-  EnhancedBreakdownResult,
-  getEffectiveElectricityRate,
-} from "@/lib/calculations";
-import { getStateFromZip } from "@/lib/data/zipToState";
-import { calculateEnhancedECMs, ECMCalculationSummary } from "@/lib/ecm";
-import BuildingIntakeForm from "@/components/BuildingIntakeForm";
-import UtilityBillInput from "@/components/UtilityBillInput";
-import OperatingScheduleInput from "@/components/OperatingScheduleInput";
-import EquipmentInventoryComponent from "@/components/EquipmentInventory";
-import AuditResults from "@/components/AuditResults";
+import Link from 'next/link';
+import { Button } from '@/components/ui';
+import { 
+  ArrowRight, 
+  Building2, 
+  ClipboardCheck, 
+  BarChart3, 
+  Camera,
+  FileText,
+  Zap,
+  Users,
+  Shield
+} from 'lucide-react';
 
-export default function Home() {
-  // Phase 0: Basic building data
-  const [formData, setFormData] = useState<FormData>({
-    buildingName: "",
-    businessType: "",
-    floorArea: "",
-    zipCode: "",
-    constructionYear: "",
-    primaryHeatingFuel: "",
-    secondaryFuel: "None",
-  });
-
-  // Track calculation details for display
-  const [calculationResult, setCalculationResult] = useState<EnergyCalculationResult | null>(null);
-
-  // Phase A: Utility bill data
-  const [utilityData, setUtilityData] = useState<UtilityBillData>(createEmptyUtilityData());
-
-  // Phase B: Operating schedule data
-  const [scheduleData, setScheduleData] = useState<OperatingScheduleData>(
-    createEmptyScheduleData()
-  );
-
-  // Phase C: Equipment inventory data
-  const [equipmentData, setEquipmentData] = useState<EquipmentInventory>(
-    createEmptyEquipmentInventory()
-  );
-
-  // Results state
-  const [submittedData, setSubmittedData] = useState<FormData | null>(null);
-  const [submittedUtilityData, setSubmittedUtilityData] = useState<UtilityBillData | null>(null);
-  const [submittedScheduleData, setSubmittedScheduleData] = useState<OperatingScheduleData | null>(null);
-  const [submittedEquipmentData, setSubmittedEquipmentData] = useState<EquipmentInventory | null>(null);
-  const [annualEnergyUse, setAnnualEnergyUse] = useState<number | null>(null);
-  const [annualEnergyCost, setAnnualEnergyCost] = useState<number | null>(null);
-  const [endUseBreakdown, setEndUseBreakdown] = useState<Record<string, number> | null>(null);
-  const [enhancedBreakdown, setEnhancedBreakdown] = useState<EnhancedBreakdownResult | null>(null);
-  const [ecmResults, setEcmResults] = useState<ReturnType<typeof calculateECMs>>(null);
-  const [enhancedEcmResults, setEnhancedEcmResults] = useState<ECMCalculationSummary | null>(null);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Update schedule defaults when business type changes
-    if (name === "businessType" && value) {
-      setScheduleData(createEmptyScheduleData(value));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Save all submitted data
-    setSubmittedData({ ...formData });
-    setSubmittedUtilityData({ ...utilityData });
-    setSubmittedScheduleData({ ...scheduleData });
-    setSubmittedEquipmentData({ ...equipmentData });
-
-    // Get state code from ZIP for utility rates
-    const stateCode = formData.zipCode ? getStateFromZip(formData.zipCode) : null;
-
-    // Calculate energy use with adjustments
-    let energyUse: number | null;
-    let calcResult: EnergyCalculationResult | null = null;
-
-    if (utilityData.hasActualData && utilityData.totalElectricityKwh > 0) {
-      // Use actual utility data
-      energyUse = utilityData.totalElectricityKwh;
-      // Still calculate the result for reference data (rates, climate, etc.)
-      calcResult = calculateAnnualEnergyUseWithAdjustments(
-        formData.businessType,
-        formData.floorArea,
-        {
-          constructionYear: formData.constructionYear,
-          zipCode: formData.zipCode,
-        }
-      );
-    } else {
-      // Use EUI-based estimate with adjustments
-      calcResult = calculateAnnualEnergyUseWithAdjustments(
-        formData.businessType,
-        formData.floorArea,
-        {
-          constructionYear: formData.constructionYear,
-          zipCode: formData.zipCode,
-        }
-      );
-      energyUse = calcResult?.annualEnergyUse ?? null;
-    }
-    
-    setCalculationResult(calcResult);
-    setAnnualEnergyUse(energyUse);
-
-    // Calculate energy cost - use actual data if available, otherwise use state rates
-    let energyCost: number | null;
-    if (utilityData.hasActualData && utilityData.totalElectricityCost > 0) {
-      energyCost = utilityData.totalElectricityCost;
-    } else {
-      energyCost = energyUse !== null ? calculateAnnualEnergyCost(energyUse, stateCode) : null;
-    }
-    setAnnualEnergyCost(energyCost);
-
-    // Calculate enhanced end-use breakdown (integrates equipment data if available)
-    const enhanced = calculateEnhancedEndUseBreakdown(
-      formData.businessType,
-      energyUse,
-      equipmentData.hasEquipmentData ? {
-        estimatedAnnualHVACKwh: equipmentData.estimatedAnnualHVACKwh,
-        estimatedAnnualLightingKwh: equipmentData.estimatedAnnualLightingKwh,
-        estimatedAnnualEquipmentKwh: equipmentData.estimatedAnnualEquipmentKwh,
-        hasEquipmentData: equipmentData.hasEquipmentData,
-      } : null
-    );
-    setEnhancedBreakdown(enhanced);
-    setEndUseBreakdown(enhanced?.breakdown ?? null);
-
-    // Calculate ECMs with state-based electricity rate (legacy)
-    const ecms = calculateECMs(enhanced?.breakdown ?? null, formData.floorArea, stateCode);
-    setEcmResults(ecms);
-
-    // Calculate enhanced ECMs with confidence ranges and rebates
-    const electricityRate = getEffectiveElectricityRate(stateCode);
-    const enhancedEcms = calculateEnhancedECMs(
-      formData.businessType,
-      enhanced?.breakdown ?? null,
-      parseFloat(formData.floorArea) || 0,
-      electricityRate
-    );
-    setEnhancedEcmResults(enhancedEcms);
-  };
-
-  const floorAreaNumber = parseFloat(formData.floorArea) || 0;
-
+export default function HomePage() {
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">
-          Energy Audit – Baseline Assessment
-        </h1>
-        <p className="text-gray-600 text-lg leading-relaxed">
-          This tool estimates building energy usage to help you understand your energy
-          consumption patterns and identify potential areas for improvement.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-gray-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-8 h-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">Energy Audit Tool</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {/* Main Building Form */}
-      <BuildingIntakeForm
-        formData={formData}
-        onChange={handleChange}
-        onSubmit={handleSubmit}
-      />
+      {/* Hero Section */}
+      <section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center mb-16">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              Energy Assessment{' '}
+              <span className="text-blue-600">Made Simple</span>
+            </h1>
+            <p className="text-xl text-gray-600">
+              Choose your role to get started with the right tools for your needs.
+            </p>
+          </div>
 
-      {/* Phase A: Utility Bill Input */}
-      <UtilityBillInput
-        utilityData={utilityData}
-        onChange={setUtilityData}
-        floorArea={floorAreaNumber}
-      />
+          {/* Role Selection Cards */}
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Customer View */}
+            <Link href="/assessment" className="group">
+              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-blue-500 hover:shadow-xl transition-all h-full">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                    <Building2 className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Business Owner</h2>
+                    <p className="text-blue-600 font-medium">Self-Assessment Tool</p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-600 mb-6">
+                  Get a free, personalized energy assessment in just 10 minutes. 
+                  See how your business compares and find opportunities to save.
+                </p>
 
-      {/* Phase B: Operating Schedule Input */}
-      <OperatingScheduleInput
-        scheduleData={scheduleData}
-        onChange={setScheduleData}
-        businessType={formData.businessType}
-      />
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <BarChart3 className="w-5 h-5 text-blue-500" />
+                    <span>Compare to similar businesses</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <Zap className="w-5 h-5 text-blue-500" />
+                    <span>Identify quick wins & savings</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                    <span>Get actionable recommendations</span>
+                  </li>
+                </ul>
 
-      {/* Phase C: Equipment Inventory */}
-      <EquipmentInventoryComponent
-        equipment={equipmentData}
-        onChange={setEquipmentData}
-      />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Shield className="w-4 h-4" />
+                    <span>No account required</span>
+                  </div>
+                  <Button className="group-hover:bg-blue-700">
+                    Start Assessment
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Link>
 
-      {/* Results */}
-      {submittedData && (
-        <AuditResults
-          submittedData={submittedData}
-          annualEnergyUse={annualEnergyUse}
-          annualEnergyCost={annualEnergyCost}
-          endUseBreakdown={endUseBreakdown}
-          enhancedBreakdown={enhancedBreakdown}
-          ecmResults={ecmResults}
-          enhancedEcmResults={enhancedEcmResults}
-          utilityData={submittedUtilityData}
-          scheduleData={submittedScheduleData}
-          equipmentData={submittedEquipmentData}
-          calculationResult={calculationResult}
-        />
-      )}
+            {/* Auditor View */}
+            <Link href="/auditor" className="group">
+              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-gray-100 hover:border-green-500 hover:shadow-xl transition-all h-full">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-600 transition-colors">
+                    <ClipboardCheck className="w-8 h-8 text-green-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Energy Auditor</h2>
+                    <p className="text-green-600 font-medium">On-Site Audit Tool</p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-600 mb-6">
+                  Professional on-site audit tool for energy auditors and contractors. 
+                  Document equipment, capture photos, and generate reports.
+                </p>
+
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <Camera className="w-5 h-5 text-green-500" />
+                    <span>Photo documentation with categories</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <ClipboardCheck className="w-5 h-5 text-green-500" />
+                    <span>Equipment inventory tracking</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-gray-700">
+                    <FileText className="w-5 h-5 text-green-500" />
+                    <span>Professional audit reports</span>
+                  </li>
+                </ul>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Users className="w-4 h-4" />
+                    <span>For professionals</span>
+                  </div>
+                  <Button className="bg-green-600 hover:bg-green-700">
+                    Open Auditor
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Comparison */}
+      <section className="py-16 bg-white border-t border-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">
+            Choose the Right Tool for You
+          </h2>
+          
+          <div className="max-w-4xl mx-auto overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-4 px-4 font-semibold text-gray-900">Feature</th>
+                  <th className="text-center py-4 px-4 font-semibold text-blue-600">Business Owner</th>
+                  <th className="text-center py-4 px-4 font-semibold text-green-600">Energy Auditor</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Energy benchmarking</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Savings recommendations</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Utility bill analysis</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Photo documentation</td>
+                  <td className="py-3 px-4 text-center">—</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Detailed equipment inventory</td>
+                  <td className="py-3 px-4 text-center">Basic</td>
+                  <td className="py-3 px-4 text-center">Detailed</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Multiple audit management</td>
+                  <td className="py-3 px-4 text-center">—</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4 text-gray-700">Export/Import audits</td>
+                  <td className="py-3 px-4 text-center">—</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                </tr>
+                <tr>
+                  <td className="py-3 px-4 text-gray-700">AI-powered summary</td>
+                  <td className="py-3 px-4 text-center text-green-600 font-medium">Yes</td>
+                  <td className="py-3 px-4 text-center">Coming Soon</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 bg-gray-50 border-t border-gray-100">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
+          <p>Energy Audit Tool — Free energy assessment for businesses</p>
+        </div>
+      </footer>
     </div>
   );
 }

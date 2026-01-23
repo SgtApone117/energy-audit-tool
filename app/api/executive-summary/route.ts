@@ -4,7 +4,7 @@ import { buildExecutiveSummaryPrompt, parseAIResponse } from "@/lib/ai/aiExecuti
 
 /**
  * Server-side API route for generating AI Executive Summary.
- * This ensures OpenAI API keys are never exposed to the client.
+ * Keeps OpenAI API key secure on the server.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "OpenAI API key not configured. Please set OPENAI_API_KEY environment variable." },
-        { status: 500 }
+        { error: "AI summary feature not available. OpenAI API key not configured." },
+        { status: 503 }
       );
     }
 
@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     const input: AIExecutiveSummaryInput = await request.json();
 
     // Validate required fields
-    if (!input.annualEnergyUse || !input.annualEnergyCost || !input.topECMs || input.topECMs.length === 0) {
+    if (!input.annualEnergyCost || !input.businessType || !input.floorArea) {
       return NextResponse.json(
-        { error: "Invalid input: missing required audit data" },
+        { error: "Invalid input: missing required assessment data" },
         { status: 400 }
       );
     }
@@ -39,32 +39,33 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Using cost-effective model
+        model: "gpt-4o-mini", // Cost-effective model
         messages: [
           {
             role: "system",
             content:
-              "You are a professional energy consultant. Generate executive summaries based strictly on provided data. Return only valid JSON matching the specified structure.",
+              "You are a friendly energy consultant helping small business owners understand their energy assessment. Generate clear, actionable summaries. Return only valid JSON.",
           },
           {
             role: "user",
             content: prompt,
           },
         ],
-        temperature: 0.3, // Lower temperature for more consistent, conservative output
-        max_tokens: 1500,
-        response_format: { type: "json_object" }, // Ensure JSON output
+        temperature: 0.4,
+        max_tokens: 1200,
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.json().catch(() => ({}));
+      console.error("OpenAI API error:", errorData);
       return NextResponse.json(
         {
-          error: "OpenAI API error",
-          details: errorData.error?.message || "Unknown error",
+          error: "Unable to generate AI summary at this time",
+          details: errorData.error?.message || "Service temporarily unavailable",
         },
-        { status: openaiResponse.status }
+        { status: 503 }
       );
     }
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (!aiContent) {
       return NextResponse.json(
-        { error: "No content received from OpenAI" },
+        { error: "No response received from AI service" },
         { status: 500 }
       );
     }
@@ -86,10 +87,12 @@ export async function POST(request: NextRequest) {
     console.error("Error generating executive summary:", error);
     return NextResponse.json(
       {
-        error: "Failed to generate executive summary",
+        error: "Failed to generate summary",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
   }
 }
+
+

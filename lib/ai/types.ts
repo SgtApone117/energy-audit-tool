@@ -1,9 +1,6 @@
-import type { FormData, ECMResult } from "../types";
-import type { Insight } from "../insights/auditInsights";
-
 /**
  * Input data for AI Executive Summary generation.
- * All values are read-only and derived from Phase 0 outputs.
+ * Adapted for customer assessment results.
  */
 export interface AIExecutiveSummaryInput {
   // Building context
@@ -11,23 +8,23 @@ export interface AIExecutiveSummaryInput {
   businessType: string;
   floorArea: number; // sq ft
   zipCode: string;
-  constructionYear: string;
-  primaryHeatingFuel: string;
+  state: string;
 
   // Baseline metrics
   annualEnergyUse: number; // kWh/year
   annualEnergyCost: number; // $/year
   eui: number; // kWh/sq ft/year
+  energyScore: string; // A-F
 
-  // End-use breakdown
-  endUseBreakdown: Record<string, number>; // category -> kWh/year
-  endUsePercentages: Record<string, number>; // category -> percentage
+  // Benchmark comparison
+  percentile: number;
+  typicalEUI: number;
+  efficientEUI: number;
 
   // ECM summary
   totalECMs: number;
-  totalEnergySavings: number; // kWh/year
-  totalCostSavings: number; // $/year
-  totalImplementationCost: number; // $
+  totalPotentialSavings: number; // $/year (typical)
+  totalImplementationCost: number; // $ (typical)
   averagePaybackPeriod: number; // years
   priorityCounts: {
     high: number;
@@ -35,30 +32,34 @@ export interface AIExecutiveSummaryInput {
     low: number;
   };
 
-  // Top ECMs (2-3)
+  // Top 3 ECMs
   topECMs: Array<{
     name: string;
-    energySaved: number; // kWh/year
-    costSaved: number; // $/year
+    annualSavings: number; // $/year
     implementationCost: number; // $
-    paybackPeriod: number; // years
-    priority: "High" | "Medium" | "Low";
+    paybackYears: number;
+    priority: 'high' | 'medium' | 'low';
   }>;
 
-  // Phase 1.1 insights
-  insights: Insight[];
+  // Quick wins total
+  quickWinsSavings: number;
+
+  // Key insights
+  insights: string[];
 }
 
 /**
  * Structured output from AI Executive Summary.
- * Must match the exact structure required by the prompt.
  */
 export interface AIExecutiveSummaryOutput {
   overview: string;
   energyPerformanceSnapshot: string[];
   keyFindings: string[];
   recommendedFocusAreas: string[];
-  topEnergyConservationMeasures: string;
+  topOpportunities: string;
   businessImpactSummary: string;
+  nextSteps: string[];
   disclaimer: string;
 }
+
+

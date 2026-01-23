@@ -1,114 +1,70 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
+import { useState, ReactNode } from 'react';
+import { HelpCircle } from 'lucide-react';
 
 interface TooltipProps {
   content: string;
-  children?: React.ReactNode;
-  position?: "top" | "bottom" | "left" | "right";
+  children?: ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-/**
- * Info icon with tooltip that shows on hover.
- * Use this for help text next to form labels.
- */
-export function InfoTooltip({ content, position = "top" }: { content: string; position?: "top" | "bottom" | "left" | "right" }) {
+export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  const positionStyles = {
+    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
+    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
+    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+  };
+
+  const arrowStyles = {
+    top: 'top-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent border-t-gray-900',
+    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent border-b-gray-900',
+    left: 'left-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent border-l-gray-900',
+    right: 'right-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent border-r-gray-900',
+  };
+
   return (
-    <Tooltip content={content} position={position}>
-      <span className="inline-flex items-center justify-center w-4 h-4 ml-1.5 text-gray-400 hover:text-gray-600 cursor-help transition-colors">
-        <svg
-          className="w-4 h-4"
-          fill="currentColor"
-          viewBox="0 0 20 20"
+    <div
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+      onFocus={() => setIsVisible(true)}
+      onBlur={() => setIsVisible(false)}
+    >
+      {children || (
+        <button type="button" className="text-gray-400 hover:text-gray-600 focus:outline-none">
+          <HelpCircle className="w-4 h-4" />
+        </button>
+      )}
+      {isVisible && (
+        <div
+          className={`absolute z-50 ${positionStyles[position]}`}
+          role="tooltip"
         >
-          <path
-            fillRule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </span>
-    </Tooltip>
+          <div className="bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-lg max-w-xs whitespace-normal">
+            {content}
+          </div>
+          <div className={`absolute w-0 h-0 border-4 ${arrowStyles[position]}`} />
+        </div>
+      )}
+    </div>
   );
 }
 
-/**
- * Generic tooltip wrapper component.
- */
-export default function Tooltip({ content, children, position = "top" }: TooltipProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+interface InfoTooltipProps {
+  content: string;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}
 
-  useEffect(() => {
-    if (isVisible && triggerRef.current && tooltipRef.current) {
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
-      
-      let x = 0;
-      let y = 0;
-      
-      switch (position) {
-        case "top":
-          x = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
-          y = triggerRect.top - tooltipRect.height - 8;
-          break;
-        case "bottom":
-          x = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
-          y = triggerRect.bottom + 8;
-          break;
-        case "left":
-          x = triggerRect.left - tooltipRect.width - 8;
-          y = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2);
-          break;
-        case "right":
-          x = triggerRect.right + 8;
-          y = triggerRect.top + (triggerRect.height / 2) - (tooltipRect.height / 2);
-          break;
-      }
-      
-      // Keep tooltip within viewport
-      x = Math.max(8, Math.min(x, window.innerWidth - tooltipRect.width - 8));
-      y = Math.max(8, Math.min(y, window.innerHeight - tooltipRect.height - 8));
-      
-      setCoords({ x, y });
-    }
-  }, [isVisible, position]);
-
+export function InfoTooltip({ content, position = 'right' }: InfoTooltipProps) {
   return (
-    <>
-      <span
-        ref={triggerRef}
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
-        onFocus={() => setIsVisible(true)}
-        onBlur={() => setIsVisible(false)}
-        className="inline-flex"
-      >
-        {children}
+    <Tooltip content={content} position={position}>
+      <span className="text-gray-400 hover:text-gray-600 cursor-help ml-1">
+        <HelpCircle className="w-4 h-4 inline" />
       </span>
-      
-      {isVisible && (
-        <div
-          ref={tooltipRef}
-          className="fixed z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg max-w-xs pointer-events-none"
-          style={{
-            left: coords.x,
-            top: coords.y,
-          }}
-        >
-          {content}
-          <div
-            className={`absolute w-2 h-2 bg-gray-900 transform rotate-45 ${
-              position === "top" ? "bottom-[-4px] left-1/2 -translate-x-1/2" :
-              position === "bottom" ? "top-[-4px] left-1/2 -translate-x-1/2" :
-              position === "left" ? "right-[-4px] top-1/2 -translate-y-1/2" :
-              "left-[-4px] top-1/2 -translate-y-1/2"
-            }`}
-          />
-        </div>
-      )}
-    </>
+    </Tooltip>
   );
 }
